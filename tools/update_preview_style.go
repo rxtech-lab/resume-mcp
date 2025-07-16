@@ -9,7 +9,7 @@ import (
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 )
 
-func NewUpdatePreviewStyleTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
+func NewUpdatePreviewStyleTool(db *database.Database, port string) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("update_preview_style",
 		mcp.WithDescription("Update CSS styles for existing preview"),
 		mcp.WithString("session_id",
@@ -37,7 +37,7 @@ func NewUpdatePreviewStyleTool(db *database.Database) (mcp.Tool, server.ToolHand
 			return mcp.NewToolResultError(fmt.Sprintf("Error updating preview style: %v", err)), nil
 		}
 
-		previewURL := fmt.Sprintf("http://localhost:8080/resume/preview/%s", sessionID)
+		previewURL := fmt.Sprintf("http://localhost:%s/resume/preview/%s", port, sessionID)
 		return mcp.NewToolResultText(fmt.Sprintf("Preview style updated successfully. URL: %s", previewURL)), nil
 	}
 

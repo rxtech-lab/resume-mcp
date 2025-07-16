@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -13,29 +14,37 @@ import (
 )
 
 func main() {
-	log.Println("Starting Resume MCP Server...")
+	// Disable all logging except errors to prevent interference with MCP protocol
+	log.SetOutput(io.Discard)
+	log.SetFlags(0) // Remove timestamp and other formatting
+	
 	// get port from cmd line
 	port := flag.String("port", "8082", "Port to listen on")
 	flag.Parse()
 
 	db, err := database.NewDatabase("resume.db")
 	if err != nil {
+		log.SetOutput(os.Stderr)
+		log.SetFlags(0) // No formatting for errors either
 		log.Fatal("Failed to initialize database:", err)
 	}
 	defer db.Close()
 
-	mcpServer := mcp.NewMCPServer(db)
+	mcpServer := mcp.NewMCPServer(db, *port)
 	apiServer := api.NewAPIServer(db)
 
 	go func() {
 		if err := apiServer.Start(*port); err != nil {
+			log.SetOutput(os.Stderr)
+			log.SetFlags(0)
 			log.Fatal("Failed to start API server:", err)
 		}
 	}()
 
 	go func() {
-		log.Println("Starting MCP server...")
 		if err := mcpServer.Start(); err != nil {
+			log.SetOutput(os.Stderr)
+			log.SetFlags(0)
 			log.Fatal("Failed to start MCP server:", err)
 		}
 	}()
@@ -44,10 +53,9 @@ func main() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
 
-	log.Println("Shutting down servers...")
 	if err := apiServer.Shutdown(); err != nil {
+		log.SetOutput(os.Stderr)
+		log.SetFlags(0)
 		log.Printf("Error shutting down API server: %v", err)
 	}
-
-	log.Println("Resume MCP Server stopped")
 }

@@ -31,7 +31,12 @@ func NewGetResumeByNameTool(db *database.Database) (mcp.Tool, server.ToolHandler
 		}
 
 		resultJSON, _ := json.Marshal(resume)
-		return mcp.NewToolResultText(fmt.Sprintf("Resume found: %s", string(resultJSON))), nil
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.NewTextContent(fmt.Sprintf("Resume found: for %s", name)),
+				mcp.NewTextContent(string(resultJSON)),
+			},
+		}, nil
 	}
 
 	return tool, handler

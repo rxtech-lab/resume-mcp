@@ -2,6 +2,8 @@ package database
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/rxtech-lab/resume-mcp/internal/models"
@@ -14,7 +16,15 @@ type Database struct {
 }
 
 func NewDatabase(dbPath string) (*Database, error) {
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	// Create directory if it doesn't exist
+	dir := filepath.Dir(dbPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create database directory: %w", err)
+	}
+
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+		Logger: nil, // Disable GORM logging to prevent color output
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}

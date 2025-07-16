@@ -1,12 +1,13 @@
 package api
 
 import (
+	"io"
 	"log"
+	"os"
 	"text/template"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 )
 
@@ -17,15 +18,17 @@ type APIServer struct {
 
 func NewAPIServer(db *database.Database) *APIServer {
 	app := fiber.New(fiber.Config{
+		DisableStartupMessage: true,
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			log.SetOutput(os.Stderr)
 			log.Printf("API Error: %v", err)
+			log.SetOutput(io.Discard)
 			return c.Status(500).JSON(fiber.Map{
 				"error": "Internal server error",
 			})
 		},
 	})
 
-	app.Use(logger.New())
 	app.Use(cors.New())
 
 	server := &APIServer{
@@ -47,7 +50,9 @@ func (s *APIServer) handlePreview(c *fiber.Ctx) error {
 	
 	session, err := s.db.GetPreviewSession(sessionID)
 	if err != nil {
+		log.SetOutput(os.Stderr)
 		log.Printf("Preview session not found: %v", err)
+		log.SetOutput(io.Discard)
 		return c.Status(404).JSON(fiber.Map{
 			"error": "Preview session not found",
 		})
@@ -55,7 +60,9 @@ func (s *APIServer) handlePreview(c *fiber.Ctx) error {
 
 	tmpl, err := template.New("resume").Parse(session.Template)
 	if err != nil {
+		log.SetOutput(os.Stderr)
 		log.Printf("Template parse error: %v", err)
+		log.SetOutput(io.Discard)
 		return c.Status(400).JSON(fiber.Map{
 			"error": "Template parse error",
 		})
@@ -64,7 +71,9 @@ func (s *APIServer) handlePreview(c *fiber.Ctx) error {
 	var html string
 	builder := &stringBuilder{}
 	if err := tmpl.Execute(builder, session.Resume); err != nil {
+		log.SetOutput(os.Stderr)
 		log.Printf("Template execution error: %v", err)
+		log.SetOutput(io.Discard)
 		return c.Status(500).JSON(fiber.Map{
 			"error": "Template execution error",
 		})
@@ -101,7 +110,6 @@ func (s *APIServer) handleHealth(c *fiber.Ctx) error {
 }
 
 func (s *APIServer) Start(port string) error {
-	log.Printf("Starting API server on port %s", port)
 	return s.app.Listen(":" + port)
 }
 

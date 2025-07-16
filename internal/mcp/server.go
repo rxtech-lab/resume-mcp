@@ -1,8 +1,6 @@
 package mcp
 
 import (
-	"log"
-
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/tools"
@@ -12,27 +10,61 @@ type MCPServer struct {
 	server *server.MCPServer
 }
 
-func NewMCPServer(db *database.Database) *MCPServer {
+func NewMCPServer(db *database.Database, port string) *MCPServer {
 	mcpServer := &MCPServer{}
-
-	mcpServer.InitializeTools()
+	mcpServer.InitializeTools(db, port)
 	return mcpServer
 }
 
-func (s *MCPServer) InitializeTools() {
+func (s *MCPServer) InitializeTools(db *database.Database, port string) {
 	srv := server.NewMCPServer(
 		"Resume MCP Server",
 		"1.0.0",
 		server.WithToolCapabilities(true),
 	)
 
-	db, err := database.NewDatabase("resume.db")
-	if err != nil {
-		log.Fatalf("Failed to create database: %v", err)
-	}
-
+	// Initialize all tools
 	createResumeTool, createResumeHandler := tools.NewCreateResumeTool(db)
 	srv.AddTool(createResumeTool, createResumeHandler)
+
+	updateBasicInfoTool, updateBasicInfoHandler := tools.NewUpdateBasicInfoTool(db)
+	srv.AddTool(updateBasicInfoTool, updateBasicInfoHandler)
+
+	addContactInfoTool, addContactInfoHandler := tools.NewAddContactInfoTool(db)
+	srv.AddTool(addContactInfoTool, addContactInfoHandler)
+
+	addWorkExperienceTool, addWorkExperienceHandler := tools.NewAddWorkExperienceTool(db)
+	srv.AddTool(addWorkExperienceTool, addWorkExperienceHandler)
+
+	addEducationTool, addEducationHandler := tools.NewAddEducationTool(db)
+	srv.AddTool(addEducationTool, addEducationHandler)
+
+	addOtherExperienceTool, addOtherExperienceHandler := tools.NewAddOtherExperienceTool(db)
+	srv.AddTool(addOtherExperienceTool, addOtherExperienceHandler)
+
+	addFeatureMapTool, addFeatureMapHandler := tools.NewAddFeatureMapTool(db)
+	srv.AddTool(addFeatureMapTool, addFeatureMapHandler)
+
+	updateFeatureMapTool, updateFeatureMapHandler := tools.NewUpdateFeatureMapTool(db)
+	srv.AddTool(updateFeatureMapTool, updateFeatureMapHandler)
+
+	deleteFeatureMapTool, deleteFeatureMapHandler := tools.NewDeleteFeatureMapTool(db)
+	srv.AddTool(deleteFeatureMapTool, deleteFeatureMapHandler)
+
+	getResumeByNameTool, getResumeByNameHandler := tools.NewGetResumeByNameTool(db)
+	srv.AddTool(getResumeByNameTool, getResumeByNameHandler)
+
+	listResumesTool, listResumesHandler := tools.NewListResumesTool(db)
+	srv.AddTool(listResumesTool, listResumesHandler)
+
+	deleteResumeTool, deleteResumeHandler := tools.NewDeleteResumeTool(db)
+	srv.AddTool(deleteResumeTool, deleteResumeHandler)
+
+	generatePreviewTool, generatePreviewHandler := tools.NewGeneratePreviewTool(db, port)
+	srv.AddTool(generatePreviewTool, generatePreviewHandler)
+
+	updatePreviewStyleTool, updatePreviewStyleHandler := tools.NewUpdatePreviewStyleTool(db, port)
+	srv.AddTool(updatePreviewStyleTool, updatePreviewStyleHandler)
 
 	s.server = srv
 }

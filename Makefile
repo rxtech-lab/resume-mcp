@@ -1,5 +1,8 @@
 .PHONY: build test run clean help
 
+BINARY_NAME=resume-mcp
+BUILD_DIR=./bin
+
 # Default target
 all: build
 
@@ -18,6 +21,13 @@ run:
 # Clean build artifacts
 clean:
 	rm -rf bin/
+
+install-local: build ## Install the binary to /usr/local/bin (requires sudo)
+	@echo "Installing $(BINARY_NAME) to /usr/local/bin..."
+	sudo cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
+	sudo chmod +x /usr/local/bin/$(BINARY_NAME)
+	@echo "$(BINARY_NAME) installed successfully!"
+	@echo "You can now run '$(BINARY_NAME)' from anywhere."
 
 # Show help
 help:

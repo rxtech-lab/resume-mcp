@@ -21,8 +21,18 @@ func NewListResumesTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc
 			return mcp.NewToolResultError(fmt.Sprintf("Error listing resumes: %v", err)), nil
 		}
 
-		resultJSON, _ := json.Marshal(resumes)
-		return mcp.NewToolResultText(fmt.Sprintf("Resumes: %s", string(resultJSON))), nil
+		simpleResumes := []string{}
+		for _, resume := range resumes {
+			simpleResumes = append(simpleResumes, fmt.Sprintf("%d: %s", resume.ID, resume.Name))
+		}
+
+		resultJSON, _ := json.Marshal(simpleResumes)
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.NewTextContent(fmt.Sprintf("Resumes found: %d", len(resumes))),
+				mcp.NewTextContent(string(resultJSON)),
+			},
+		}, nil
 	}
 
 	return tool, handler

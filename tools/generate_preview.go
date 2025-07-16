@@ -10,7 +10,7 @@ import (
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 )
 
-func NewGeneratePreviewTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
+func NewGeneratePreviewTool(db *database.Database, port string) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("generate_preview",
 		mcp.WithDescription("Generate HTML preview with template and CSS"),
 		mcp.WithString("resume_id",
@@ -19,7 +19,7 @@ func NewGeneratePreviewTool(db *database.Database) (mcp.Tool, server.ToolHandler
 		),
 		mcp.WithString("template",
 			mcp.Required(),
-			mcp.Description("Go template string for rendering"),
+			mcp.Description("Go template string for rendering. You can call the get_resume_by_name tool to get all available context variables."),
 		),
 		mcp.WithString("css",
 			mcp.Description("CSS styles for the preview"),
@@ -49,8 +49,13 @@ func NewGeneratePreviewTool(db *database.Database) (mcp.Tool, server.ToolHandler
 			return mcp.NewToolResultError(fmt.Sprintf("Error generating preview: %v", err)), nil
 		}
 
-		previewURL := fmt.Sprintf("http://localhost:8080/resume/preview/%s", sessionID)
-		return mcp.NewToolResultText(fmt.Sprintf("Preview generated successfully. URL: %s", previewURL)), nil
+		previewURL := fmt.Sprintf("http://localhost:%s/resume/preview/%s", port, sessionID)
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.NewTextContent("Preview generated successfully"),
+				mcp.NewTextContent(previewURL),
+			},
+		}, nil
 	}
 
 	return tool, handler
