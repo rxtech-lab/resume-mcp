@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/rxtech-lab/resume-mcp/internal/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -111,8 +112,34 @@ func (d *Database) UpdateFeatureMap(featureMap *models.FeatureMap) error {
 	return d.DB.Save(featureMap).Error
 }
 
+func (d *Database) GetFeatureMapByID(id uint) (*models.FeatureMap, error) {
+	var featureMap models.FeatureMap
+	err := d.DB.First(&featureMap, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &featureMap, nil
+}
+
 func (d *Database) DeleteFeatureMap(id uint) error {
 	return d.DB.Delete(&models.FeatureMap{}, id).Error
+}
+
+func (d *Database) GeneratePreview(resumeID uint, template string, css string) (string, error) {
+	sessionID := uuid.New().String()
+	session := &models.PreviewSession{
+		ID:       sessionID,
+		ResumeID: resumeID,
+		Template: template,
+		CSS:      css,
+	}
+	
+	err := d.DB.Create(session).Error
+	if err != nil {
+		return "", err
+	}
+	
+	return sessionID, nil
 }
 
 func (d *Database) CreatePreviewSession(session *models.PreviewSession) error {
