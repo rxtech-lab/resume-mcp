@@ -26,14 +26,20 @@ This is a Resume MCP (Model Context Protocol) server built in Go that allows AI 
 
 ### MCP Tools
 The server provides these MCP tools:
-- Create/update resume and basic info
-- Add/update contact information
-- Add work and education experiences
-- Manage feature maps (add, update, delete by experience ID and key)
-- Get resume by name (returns structured JSON)
-- List all saved resumes
-- Delete resume by ID
-- Generate preview PDF with template and return preview URL
+- `create_resume` - Create new resume with name, photo, and description
+- `update_basic_info` - Update resume basic information
+- `add_contact_info` - Add contact information
+- `add_work_experience` - Add work experience entries
+- `add_education` - Add education entries
+- `add_other_experience` - Add other experience categories
+- `add_feature_map` - Add flexible JSON features to experiences
+- `update_feature_map` - Update feature maps
+- `delete_feature_map` - Delete feature maps
+- `get_resume_by_name` - Get structured resume data
+- `list_resumes` - List all saved resumes
+- `delete_resume` - Delete resume by ID
+- `generate_preview` - Generate HTML preview with template and CSS
+- `update_preview_style` - Update CSS styles for existing preview
 
 ### Workflow
 1. AI agent calls `generate_resume` with Go template

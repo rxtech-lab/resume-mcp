@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"os/signal"
@@ -13,6 +14,9 @@ import (
 
 func main() {
 	log.Println("Starting Resume MCP Server...")
+	// get port from cmd line
+	port := flag.String("port", "8082", "Port to listen on")
+	flag.Parse()
 
 	db, err := database.NewDatabase("resume.db")
 	if err != nil {
@@ -21,12 +25,10 @@ func main() {
 	defer db.Close()
 
 	mcpServer := mcp.NewMCPServer(db)
-	
 	apiServer := api.NewAPIServer(db)
 
 	go func() {
-		log.Println("Starting API server on port 8080...")
-		if err := apiServer.Start("8080"); err != nil {
+		if err := apiServer.Start(*port); err != nil {
 			log.Fatal("Failed to start API server:", err)
 		}
 	}()
