@@ -17,12 +17,17 @@ func main() {
 	// Disable all logging except errors to prevent interference with MCP protocol
 	log.SetOutput(io.Discard)
 	log.SetFlags(0) // Remove timestamp and other formatting
-	
+
 	// get port from cmd line
 	port := flag.String("port", "8082", "Port to listen on")
 	flag.Parse()
+	homePath, err := os.UserHomeDir()
+	log.Println("Home directory:", homePath)
+	if err != nil {
+		log.Fatal("Failed to get home directory:", err)
+	}
 
-	db, err := database.NewDatabase("resume.db")
+	db, err := database.NewDatabase(homePath + "/resume.db")
 	if err != nil {
 		log.SetOutput(os.Stderr)
 		log.SetFlags(0) // No formatting for errors either

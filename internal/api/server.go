@@ -21,6 +21,7 @@ func NewAPIServer(db *database.Database) *APIServer {
 		DisableStartupMessage: true,
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			log.SetOutput(os.Stderr)
+			log.SetFlags(0)
 			log.Printf("API Error: %v", err)
 			log.SetOutput(io.Discard)
 			return c.Status(500).JSON(fiber.Map{
@@ -51,6 +52,7 @@ func (s *APIServer) handlePreview(c *fiber.Ctx) error {
 	session, err := s.db.GetPreviewSession(sessionID)
 	if err != nil {
 		log.SetOutput(os.Stderr)
+		log.SetFlags(0)
 		log.Printf("Preview session not found: %v", err)
 		log.SetOutput(io.Discard)
 		return c.Status(404).JSON(fiber.Map{
@@ -61,6 +63,7 @@ func (s *APIServer) handlePreview(c *fiber.Ctx) error {
 	tmpl, err := template.New("resume").Parse(session.Template)
 	if err != nil {
 		log.SetOutput(os.Stderr)
+		log.SetFlags(0)
 		log.Printf("Template parse error: %v", err)
 		log.SetOutput(io.Discard)
 		return c.Status(400).JSON(fiber.Map{
@@ -72,6 +75,7 @@ func (s *APIServer) handlePreview(c *fiber.Ctx) error {
 	builder := &stringBuilder{}
 	if err := tmpl.Execute(builder, session.Resume); err != nil {
 		log.SetOutput(os.Stderr)
+		log.SetFlags(0)
 		log.Printf("Template execution error: %v", err)
 		log.SetOutput(io.Discard)
 		return c.Status(500).JSON(fiber.Map{
