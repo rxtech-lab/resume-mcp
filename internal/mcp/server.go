@@ -67,6 +67,22 @@ func (s *MCPServer) InitializeTools(db *database.Database, port string, template
 	updatePreviewStyleTool, updatePreviewStyleHandler := tools.NewUpdatePreviewStyleTool(db, port)
 	srv.AddTool(updatePreviewStyleTool, updatePreviewStyleHandler)
 
+	// Template tools
+	createTemplateTool, createTemplateHandler := tools.NewCreateTemplateTool(db, templateService)
+	srv.AddTool(createTemplateTool, createTemplateHandler)
+
+	getTemplateTool, getTemplateHandler := tools.NewGetTemplateTool(db)
+	srv.AddTool(getTemplateTool, getTemplateHandler)
+
+	listTemplatesTool, listTemplatesHandler := tools.NewListTemplatesTool(db)
+	srv.AddTool(listTemplatesTool, listTemplatesHandler)
+
+	updateTemplateTool, updateTemplateHandler := tools.NewUpdateTemplateTool(db, templateService)
+	srv.AddTool(updateTemplateTool, updateTemplateHandler)
+
+	deleteTemplateTool, deleteTemplateHandler := tools.NewDeleteTemplateTool(db)
+	srv.AddTool(deleteTemplateTool, deleteTemplateHandler)
+
 	s.server = srv
 }
 

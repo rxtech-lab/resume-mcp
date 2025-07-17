@@ -13,14 +13,14 @@ import (
 
 func NewGeneratePreviewTool(db *database.Database, port string, templateService *service.TemplateService) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("generate_preview",
-		mcp.WithDescription("Generate HTML preview of a resume using Go templates. Returns a preview URL. Templates now include Tailwind CSS for styling."),
+		mcp.WithDescription("Generate HTML preview of a resume using a saved template. Returns a preview URL. Templates include Tailwind CSS for styling."),
 		mcp.WithString("resume_id",
 			mcp.Required(),
 			mcp.Description("The ID of the resume to generate preview for"),
 		),
-		mcp.WithString("template",
+		mcp.WithString("template_id",
 			mcp.Required(),
-			mcp.Description("Go template string for rendering. Use Tailwind CSS classes for styling (CDN included). Call get_resume_by_name to see available context variables."),
+			mcp.Description("The ID of the template to use for rendering"),
 		),
 		mcp.WithString("css",
 			mcp.Description("Additional CSS styles for the preview (optional, Tailwind CSS classes are available in templates)"),
@@ -38,9 +38,14 @@ func NewGeneratePreviewTool(db *database.Database, port string, templateService 
 			return mcp.NewToolResultError(fmt.Sprintf("Invalid resume_id: %v", err)), nil
 		}
 
-		template, err := request.RequireString("template")
+		templateIDStr, err := request.RequireString("template_id")
 		if err != nil {
-			return nil, fmt.Errorf("template parameter is required: %w", err)
+			return nil, fmt.Errorf("template_id parameter is required: %w", err)
+		}
+
+		templateID, err := strconv.ParseUint(templateIDStr, 10, 32)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Invalid template_id: %v", err)), nil
 		}
 
 		css := request.GetString("css", "")
@@ -50,12 +55,22 @@ func NewGeneratePreviewTool(db *database.Database, port string, templateService 
 			return mcp.NewToolResultError(fmt.Sprintf("Error getting resume: %v", err)), nil
 		}
 
-		_, err = templateService.GeneratePreview(template, css, *resume)
+		template, err := db.GetTemplateByID(uint(templateID))
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Error getting template: %v", err)), nil
+		}
+
+		// Verify template belongs to the same resume
+		if template.ResumeID != uint(resumeID) {
+			return mcp.NewToolResultError("Template does not belong to the specified resume"), nil
+		}
+
+		_, err = templateService.GeneratePreview(template.TemplateData, css, *resume)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error generating preview: %v", err)), nil
 		}
 
-		sessionID, err := db.GeneratePreview(uint(resumeID), template, css)
+		sessionID, err := db.GeneratePreview(uint(resumeID), template.TemplateData, css)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error generating preview: %v", err)), nil
 		}

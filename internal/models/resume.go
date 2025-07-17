@@ -19,6 +19,7 @@ type Resume struct {
 	WorkExperiences []WorkExperience `gorm:"foreignKey:ResumeID" json:"work_experiences,omitempty"`
 	Educations      []Education      `gorm:"foreignKey:ResumeID" json:"educations,omitempty"`
 	OtherExperiences []OtherExperience `gorm:"foreignKey:ResumeID" json:"other_experiences,omitempty"`
+	Templates       []Template       `gorm:"foreignKey:ResumeID;constraint:OnDelete:CASCADE" json:"templates,omitempty"`
 }
 
 type Contact struct {
@@ -75,4 +76,15 @@ type PreviewSession struct {
 	CSS       string    `gorm:"type:text" json:"css"`
 	CreatedAt time.Time `json:"created_at"`
 	Resume    Resume    `gorm:"foreignKey:ResumeID" json:"resume"`
+}
+
+type Template struct {
+	ID           uint      `gorm:"primaryKey" json:"id"`
+	ResumeID     uint      `gorm:"not null" json:"resume_id"`
+	Name         string    `gorm:"not null" json:"name"`
+	Description  string    `json:"description"`
+	TemplateData string    `gorm:"type:text;not null" json:"template_data"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Resume       Resume    `gorm:"foreignKey:ResumeID" json:"-"`
 }

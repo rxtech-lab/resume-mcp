@@ -46,6 +46,7 @@ func (d *Database) migrate() error {
 		&models.OtherExperience{},
 		&models.FeatureMap{},
 		&models.PreviewSession{},
+		&models.Template{},
 	)
 }
 
@@ -174,6 +175,34 @@ func (d *Database) UpdatePreviewSessionCSS(sessionID string, css string) error {
 	return d.DB.Model(&models.PreviewSession{}).
 		Where("id = ?", sessionID).
 		Update("css", css).Error
+}
+
+// Template CRUD operations
+func (d *Database) CreateTemplate(template *models.Template) error {
+	return d.DB.Create(template).Error
+}
+
+func (d *Database) GetTemplateByID(id uint) (*models.Template, error) {
+	var template models.Template
+	err := d.DB.First(&template, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &template, nil
+}
+
+func (d *Database) ListTemplatesByResumeID(resumeID uint) ([]models.Template, error) {
+	var templates []models.Template
+	err := d.DB.Where("resume_id = ?", resumeID).Find(&templates).Error
+	return templates, err
+}
+
+func (d *Database) UpdateTemplate(template *models.Template) error {
+	return d.DB.Save(template).Error
+}
+
+func (d *Database) DeleteTemplate(id uint) error {
+	return d.DB.Delete(&models.Template{}, id).Error
 }
 
 func (d *Database) Close() error {
