@@ -21,8 +21,9 @@ run:
 # Clean build artifacts
 clean:
 	rm -rf bin/
+	sudo rm -rf /usr/local/bin/$(BINARY_NAME)
 
-install-local: build ## Install the binary to /usr/local/bin (requires sudo)
+install-local: clean build ## Install the binary to /usr/local/bin (requires sudo)
 	@echo "Installing $(BINARY_NAME) to /usr/local/bin..."
 	sudo cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
 	sudo chmod +x /usr/local/bin/$(BINARY_NAME)

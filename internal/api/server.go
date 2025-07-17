@@ -63,6 +63,9 @@ func (s *APIServer) handlePreview(c *fiber.Ctx) error {
 	}
 
 	fullHTML, err := s.templateService.GeneratePreview(session.Template, session.CSS, session.Resume)
+
+	// set content type to html
+	c.Set("Content-Type", "text/html")
 	return c.SendString(fullHTML)
 }
 

@@ -111,7 +111,6 @@ Example template:
 
 		result := map[string]interface{}{
 			"success":     true,
-			"message":     fmt.Sprintf("Template '%s' created successfully", name),
 			"template_id": template.ID,
 			"template":    template,
 		}
