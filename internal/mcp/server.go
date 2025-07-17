@@ -83,6 +83,9 @@ func (s *MCPServer) InitializeTools(db *database.Database, port string, template
 	deleteTemplateTool, deleteTemplateHandler := tools.NewDeleteTemplateTool(db)
 	srv.AddTool(deleteTemplateTool, deleteTemplateHandler)
 
+	getResumeContextTool, getResumeContextHandler := tools.NewGetResumeContextTool(db)
+	srv.AddTool(getResumeContextTool, getResumeContextHandler)
+
 	s.server = srv
 }
 

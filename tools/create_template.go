@@ -112,7 +112,6 @@ Example template:
 		result := map[string]interface{}{
 			"success":     true,
 			"template_id": template.ID,
-			"template":    template,
 		}
 
 		resultJSON, _ := json.Marshal(result)

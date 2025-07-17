@@ -51,12 +51,12 @@ func NewUpdateTemplateTool(db *database.Database, templateService *service.Templ
 		if name != "" {
 			template.Name = name
 		}
-		
+
 		description := request.GetString("description", "")
 		if description != "" {
 			template.Description = description
 		}
-		
+
 		templateData := request.GetString("template_data", "")
 		if templateData != "" {
 			// Validate new template by testing it
@@ -78,9 +78,8 @@ func NewUpdateTemplateTool(db *database.Database, templateService *service.Templ
 		}
 
 		result := map[string]interface{}{
-			"success":  true,
-			"message":  fmt.Sprintf("Template '%s' updated successfully", template.Name),
-			"template": template,
+			"success": true,
+			"message": fmt.Sprintf("Template '%s' updated successfully", template.Name),
 		}
 
 		resultJSON, _ := json.Marshal(result)
