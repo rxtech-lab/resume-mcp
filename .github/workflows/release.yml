@@ -38,6 +38,7 @@ jobs:
         run: make build && ./scripts/sign.sh
         env:
           VERSION: ${{ github.event_name == 'release' && github.ref_name || format('dev-{0}', github.sha) }}
+          SIGNING_CERTIFICATE_NAME: ${{ secrets.SIGNING_CERTIFICATE_NAME }}
 
       - name: Import code installer certificates
         uses: apple-actions/import-codesign-certs@v3
