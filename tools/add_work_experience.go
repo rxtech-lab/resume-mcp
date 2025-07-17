@@ -28,6 +28,12 @@ func NewAddWorkExperienceTool(db *database.Database) (mcp.Tool, server.ToolHandl
 			mcp.Required(),
 			mcp.Description("The job title"),
 		),
+		mcp.WithString("type",
+			mcp.Description("Type of work experience: fulltime, parttime, or internship (default: fulltime)"),
+			mcp.WithStringEnumItems(
+				[]string{"fulltime", "parttime", "internship"},
+			),
+		),
 		mcp.WithString("start_date",
 			mcp.Required(),
 			mcp.Description("Start date in YYYY-MM-DD format"),
@@ -58,6 +64,12 @@ func NewAddWorkExperienceTool(db *database.Database) (mcp.Tool, server.ToolHandl
 			return nil, fmt.Errorf("job_title parameter is required: %w", err)
 		}
 
+		workType := request.GetString("type", "fulltime")
+		// Validate type
+		if workType != "fulltime" && workType != "parttime" && workType != "internship" {
+			return mcp.NewToolResultError("Invalid type. Must be: fulltime, parttime, or internship"), nil
+		}
+
 		startDateStr, err := request.RequireString("start_date")
 		if err != nil {
 			return nil, fmt.Errorf("start_date parameter is required: %w", err)
@@ -82,6 +94,7 @@ func NewAddWorkExperienceTool(db *database.Database) (mcp.Tool, server.ToolHandl
 			ResumeID:  uint(resumeID),
 			Company:   company,
 			JobTitle:  jobTitle,
+			Type:      workType,
 			StartDate: startDate,
 			EndDate:   endDate,
 		}
@@ -95,6 +108,7 @@ func NewAddWorkExperienceTool(db *database.Database) (mcp.Tool, server.ToolHandl
 			"resume_id":  workExp.ResumeID,
 			"company":    workExp.Company,
 			"job_title":  workExp.JobTitle,
+			"type":       workExp.Type,
 			"start_date": workExp.StartDate.Format("2006-01-02"),
 		}
 

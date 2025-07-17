@@ -27,7 +27,7 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			mcp.Description("Brief description or summary"),
 		),
 		mcp.WithString("copy_from_resume_id",
-			mcp.Description("Optional: ID of an existing resume to copy all data from (contacts, work experiences, education, etc.). The new resume will have the provided name, photo, and description, but all other data will be copied from the source resume."),
+			mcp.Description("Optional: ID of an existing resume to copy all data from (contacts, work experiences, education, etc.). The new resume will have the provided name, photo, and description, but all other data will be copied from the source resume. If user ask to create a new resume base on the existing one, please use this parameter and don't need to add all the data manually."),
 		),
 	)
 
@@ -87,6 +87,7 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 					ResumeID:  resume.ID,
 					Company:   workExp.Company,
 					JobTitle:  workExp.JobTitle,
+					Type:      workExp.Type,
 					StartDate: workExp.StartDate,
 					EndDate:   workExp.EndDate,
 				}
@@ -112,6 +113,7 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 				newEducation := &models.Education{
 					ResumeID:   resume.ID,
 					SchoolName: education.SchoolName,
+					Type:       education.Type,
 					StartDate:  education.StartDate,
 					EndDate:    education.EndDate,
 				}

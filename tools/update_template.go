@@ -14,7 +14,7 @@ import (
 
 func NewUpdateTemplateTool(db *database.Database, templateService *service.TemplateService) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("update_template",
-		mcp.WithDescription("Update an existing template"),
+		mcp.WithDescription("Update an existing template. If user ask to remove sections or data from the final preview, please use this tool to update the template and don't try to delete the data first. Only delete the data if you are sure about the data is not needed."),
 		mcp.WithString("template_id",
 			mcp.Required(),
 			mcp.Description("ID of the template to update"),
