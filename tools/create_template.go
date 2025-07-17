@@ -115,6 +115,7 @@ Example template:
 				newEducation := &models.Education{
 					ResumeID:   uint(resumeID),
 					SchoolName: education.SchoolName,
+					Type:       education.Type,
 					StartDate:  education.StartDate,
 					EndDate:    education.EndDate,
 				}
@@ -141,6 +142,7 @@ Example template:
 					ResumeID:  uint(resumeID),
 					Company:   workExp.Company,
 					JobTitle:  workExp.JobTitle,
+					Type:      workExp.Type,
 					StartDate: workExp.StartDate,
 					EndDate:   workExp.EndDate,
 				}

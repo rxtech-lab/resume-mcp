@@ -24,6 +24,12 @@ func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			mcp.Required(),
 			mcp.Description("The name of the school"),
 		),
+		mcp.WithString("type",
+			mcp.Description("Type of education: fulltime, parttime, or internship (default: fulltime)"),
+			mcp.WithStringEnumItems(
+				[]string{"fulltime", "parttime", "internship"},
+			),
+		),
 		mcp.WithString("start_date",
 			mcp.Required(),
 			mcp.Description("Start date in YYYY-MM-DD format"),
@@ -49,6 +55,12 @@ func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			return nil, fmt.Errorf("school_name parameter is required: %w", err)
 		}
 
+		eduType := request.GetString("type", "fulltime")
+		// Validate type
+		if eduType != "fulltime" && eduType != "parttime" && eduType != "internship" {
+			return mcp.NewToolResultError("Invalid type. Must be: fulltime, parttime, or internship"), nil
+		}
+
 		startDateStr, err := request.RequireString("start_date")
 		if err != nil {
 			return nil, fmt.Errorf("start_date parameter is required: %w", err)
@@ -72,6 +84,7 @@ func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 		education := &models.Education{
 			ResumeID:   uint(resumeID),
 			SchoolName: schoolName,
+			Type:       eduType,
 			StartDate:  startDate,
 			EndDate:    endDate,
 		}
@@ -84,6 +97,7 @@ func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			"id":          education.ID,
 			"resume_id":   education.ResumeID,
 			"school_name": education.SchoolName,
+			"type":        education.Type,
 			"start_date":  education.StartDate.Format("2006-01-02"),
 		}
 

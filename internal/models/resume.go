@@ -35,6 +35,7 @@ type WorkExperience struct {
 	ResumeID  uint      `gorm:"not null" json:"resume_id"`
 	Company   string    `gorm:"not null" json:"company"`
 	JobTitle  string    `gorm:"not null" json:"job_title"`
+	Type      string    `gorm:"default:fulltime" json:"type"` // fulltime, parttime, internship
 	StartDate time.Time `json:"start_date"`
 	EndDate   *time.Time `json:"end_date"`
 	Resume    Resume    `gorm:"foreignKey:ResumeID" json:"-"`
@@ -46,6 +47,7 @@ type Education struct {
 	ID         uint       `gorm:"primaryKey" json:"id"`
 	ResumeID   uint       `gorm:"not null" json:"resume_id"`
 	SchoolName string     `gorm:"not null" json:"school_name"`
+	Type       string     `gorm:"default:fulltime" json:"type"` // fulltime, parttime, internship
 	StartDate  time.Time  `json:"start_date"`
 	EndDate    *time.Time `json:"end_date"`
 	Resume     Resume     `gorm:"foreignKey:ResumeID" json:"-"`
