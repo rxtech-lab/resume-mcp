@@ -12,17 +12,17 @@ import (
 
 func NewGeneratePreviewTool(db *database.Database, port string) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("generate_preview",
-		mcp.WithDescription("Generate HTML preview with template and CSS"),
+		mcp.WithDescription("Generate HTML preview of a resume using Go templates. Returns a preview URL. Templates now include Tailwind CSS for styling."),
 		mcp.WithString("resume_id",
 			mcp.Required(),
 			mcp.Description("The ID of the resume to generate preview for"),
 		),
 		mcp.WithString("template",
 			mcp.Required(),
-			mcp.Description("Go template string for rendering. You can call the get_resume_by_name tool to get all available context variables."),
+			mcp.Description("Go template string for rendering. Use Tailwind CSS classes for styling (CDN included). Call get_resume_by_name to see available context variables."),
 		),
 		mcp.WithString("css",
-			mcp.Description("CSS styles for the preview"),
+			mcp.Description("Additional CSS styles for the preview (optional, Tailwind CSS classes are available in templates)"),
 		),
 	)
 

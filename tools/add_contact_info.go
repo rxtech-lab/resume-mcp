@@ -14,7 +14,7 @@ import (
 
 func NewAddContactInfoTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("add_contact_info",
-		mcp.WithDescription("Add contact information to a resume"),
+		mcp.WithDescription("Add contact information to a resume as key-value pairs (e.g., email, phone, linkedin, github, etc.)."),
 		mcp.WithString("resume_id",
 			mcp.Required(),
 			mcp.Description("The ID of the resume to add contact info to"),

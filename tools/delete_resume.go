@@ -12,7 +12,7 @@ import (
 
 func NewDeleteResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("delete_resume",
-		mcp.WithDescription("Delete resume by ID"),
+		mcp.WithDescription("Delete a resume and all associated data (contacts, experiences, feature maps) by ID. This action cannot be undone."),
 		mcp.WithString("resume_id",
 			mcp.Required(),
 			mcp.Description("The ID of the resume to delete"),

@@ -13,7 +13,7 @@ import (
 
 func NewUpdateFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("update_feature_map",
-		mcp.WithDescription("Update existing feature map"),
+		mcp.WithDescription("Update an existing feature map by ID. Use this to modify specific details attached to experiences."),
 		mcp.WithString("feature_map_id",
 			mcp.Required(),
 			mcp.Description("The ID of the feature map to update"),

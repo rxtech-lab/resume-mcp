@@ -11,7 +11,7 @@ import (
 
 func NewUpdatePreviewStyleTool(db *database.Database, port string) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("update_preview_style",
-		mcp.WithDescription("Update CSS styles for existing preview"),
+		mcp.WithDescription("Update CSS styles for an existing preview session. Tailwind CSS classes are available for styling."),
 		mcp.WithString("session_id",
 			mcp.Required(),
 			mcp.Description("The session ID of the preview to update"),

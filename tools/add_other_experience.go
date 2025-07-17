@@ -14,7 +14,7 @@ import (
 
 func NewAddOtherExperienceTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("add_other_experience",
-		mcp.WithDescription("Add other experience with category to a resume"),
+		mcp.WithDescription("Add other categorized experiences to a resume (skills, awards, certifications, projects, etc.). Use feature maps to add detailed information."),
 		mcp.WithString("resume_id",
 			mcp.Required(),
 			mcp.Description("The ID of the resume to add other experience to"),

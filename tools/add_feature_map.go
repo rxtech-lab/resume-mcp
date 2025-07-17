@@ -14,7 +14,7 @@ import (
 
 func NewAddFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("add_feature_map",
-		mcp.WithDescription("Add flexible JSON features to experiences"),
+		mcp.WithDescription("Add flexible key-value features to any experience (work, education, other). Use this for details like GPA, salary, responsibilities, achievements, skills, etc."),
 		mcp.WithString("experience_id",
 			mcp.Required(),
 			mcp.Description("The ID of the experience to add features to"),

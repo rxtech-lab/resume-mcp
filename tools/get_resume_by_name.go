@@ -12,7 +12,7 @@ import (
 
 func NewGetResumeByNameTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("get_resume_by_name",
-		mcp.WithDescription("Get structured resume data by name"),
+		mcp.WithDescription("Retrieve complete structured resume data by name. Returns all associated contacts, experiences, education, and feature maps for template generation."),
 		mcp.WithString("name",
 			mcp.Required(),
 			mcp.Description("The name of the resume to retrieve"),

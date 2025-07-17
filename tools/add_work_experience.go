@@ -15,7 +15,7 @@ import (
 
 func NewAddWorkExperienceTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("add_work_experience",
-		mcp.WithDescription("Add work experience to a resume"),
+		mcp.WithDescription("Add work experience to a resume with company, job title, and date range. Use feature maps to add additional details like responsibilities or achievements."),
 		mcp.WithString("resume_id",
 			mcp.Required(),
 			mcp.Description("The ID of the resume to add work experience to"),

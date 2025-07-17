@@ -12,7 +12,7 @@ import (
 
 func NewDeleteFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("delete_feature_map",
-		mcp.WithDescription("Delete feature map by ID"),
+		mcp.WithDescription("Delete a specific feature map by ID. Use this to remove specific details from experiences."),
 		mcp.WithString("feature_map_id",
 			mcp.Required(),
 			mcp.Description("The ID of the feature map to delete"),

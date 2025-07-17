@@ -12,7 +12,7 @@ import (
 
 func NewListResumesTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("list_resumes",
-		mcp.WithDescription("List all saved resumes"),
+		mcp.WithDescription("List all saved resumes with their IDs and names. Use this to find available resumes before generating previews."),
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {

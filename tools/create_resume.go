@@ -13,7 +13,7 @@ import (
 
 func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("create_resume",
-		mcp.WithDescription("Create a new resume with basic information"),
+		mcp.WithDescription("Create a new resume with basic information including name, photo, and description. Returns the created resume ID for use with other tools."),
 		mcp.WithString("name",
 			mcp.Required(),
 			mcp.Description("The name of the resume owner"),

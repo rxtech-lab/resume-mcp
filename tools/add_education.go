@@ -15,7 +15,7 @@ import (
 
 func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("add_education",
-		mcp.WithDescription("Add education experience to a resume"),
+		mcp.WithDescription("Add education experience to a resume with school name and date range. Use feature maps to add details like degree, GPA, or coursework."),
 		mcp.WithString("resume_id",
 			mcp.Required(),
 			mcp.Description("The ID of the resume to add education to"),

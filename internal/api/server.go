@@ -95,6 +95,7 @@ func (s *APIServer) handlePreview(c *fiber.Ctx) error {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resume Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     ` + cssStyle + `
 </head>
 <body>

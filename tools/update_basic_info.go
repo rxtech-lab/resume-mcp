@@ -13,7 +13,7 @@ import (
 
 func NewUpdateBasicInfoTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("update_basic_info",
-		mcp.WithDescription("Update basic information of an existing resume"),
+		mcp.WithDescription("Update basic information (name, photo, description) of an existing resume. Only provide fields you want to update."),
 		mcp.WithString("resume_id",
 			mcp.Required(),
 			mcp.Description("The ID of the resume to update"),
