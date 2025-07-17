@@ -1,0 +1,71 @@
+name: Release Go Binary
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  release:
+    types:
+      - created
+
+jobs:
+  build-macos:
+    name: Build, Sign and Notarize macOS Binary
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          check-latest: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Import code signing certificates
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          p12-password: ${{ secrets.P12_PASSWORD }}
+      - name: Build the binary
+        run: make build && ./scripts/sign.sh
+        env:
+          VERSION: ${{ github.event_name == 'release' && github.ref_name || format('dev-{0}', github.sha) }}
+
+      - name: Import code installer certificates
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.INSTALLER_CERTIFICATE_BASE64 }}
+          p12-password: ${{ secrets.P12_PASSWORD }}
+          keychain: installer
+
+      - name: Notarize the binary
+        run: ./scripts/package-notarize.sh
+        if: github.event_name == 'release'
+        env:
+          INSTALLER_SIGNING_CERTIFICATE_NAME: ${{ secrets.INSTALLER_SIGNING_CERTIFICATE_NAME }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PWD: ${{ secrets.APPLE_ID_PWD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Prepare assets for release
+        if: github.event_name == 'release'
+        run: |
+          mkdir -p assets
+          cp resume-mcp_macOS_arm64.pkg assets/resume-mcp_macOS_arm64.pkg
+
+      # Upload to release if this is a release event
+      - name: Upload binaries to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            assets/resume-mcp_macOS_arm64.pkg
+          token: ${{ secrets.GITHUB_TOKEN }}

@@ -48,7 +48,10 @@ Example template:
 </div>`),
 		mcp.WithString("resume_id",
 			mcp.Required(),
-			mcp.Description("ID of the resume this template belongs to"),
+			mcp.Description("ID of the resume which this template is based on"),
+		),
+		mcp.WithString("copy_from_resume_id",
+			mcp.Description("Optional: ID of an existing resume to copy all data from (education, work experience, other experience, and feature maps) to the target resume before creating the template. The template will be created for the resume_id but will contain copied data from copy_from_resume_id."),
 		),
 		mcp.WithString("name",
 			mcp.Required(),
@@ -74,6 +77,8 @@ Example template:
 			return mcp.NewToolResultError(fmt.Sprintf("Invalid resume_id: %v", err)), nil
 		}
 
+		copyFromResumeIDStr := request.GetString("copy_from_resume_id", "")
+
 		name, err := request.RequireString("name")
 		if err != nil {
 			return nil, fmt.Errorf("name parameter is required: %w", err)
@@ -90,6 +95,100 @@ Example template:
 		resume, err := db.GetResumeByID(uint(resumeID))
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Resume not found: %v", err)), nil
+		}
+
+		// If copy_from_resume_id is provided, copy all data from the source resume
+		if copyFromResumeIDStr != "" {
+			copyFromResumeID, err := strconv.Atoi(copyFromResumeIDStr)
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("Invalid copy_from_resume_id: %v", err)), nil
+			}
+
+			// Get the source resume with all related data
+			sourceResume, err := db.GetResumeByID(uint(copyFromResumeID))
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("Source resume not found: %v", err)), nil
+			}
+
+			// Copy education
+			for _, education := range sourceResume.Educations {
+				newEducation := &models.Education{
+					ResumeID:   uint(resumeID),
+					SchoolName: education.SchoolName,
+					StartDate:  education.StartDate,
+					EndDate:    education.EndDate,
+				}
+				if err := db.AddEducation(newEducation); err != nil {
+					return mcp.NewToolResultError(fmt.Sprintf("Error copying education: %v", err)), nil
+				}
+
+				// Copy feature maps for this education
+				for _, featureMap := range education.FeatureMaps {
+					newFeatureMap := &models.FeatureMap{
+						ExperienceID: newEducation.ID,
+						Key:          featureMap.Key,
+						Value:        featureMap.Value,
+					}
+					if err := db.AddFeatureMap(newFeatureMap); err != nil {
+						return mcp.NewToolResultError(fmt.Sprintf("Error copying education feature map: %v", err)), nil
+					}
+				}
+			}
+
+			// Copy work experiences
+			for _, workExp := range sourceResume.WorkExperiences {
+				newWorkExp := &models.WorkExperience{
+					ResumeID:  uint(resumeID),
+					Company:   workExp.Company,
+					JobTitle:  workExp.JobTitle,
+					StartDate: workExp.StartDate,
+					EndDate:   workExp.EndDate,
+				}
+				if err := db.AddWorkExperience(newWorkExp); err != nil {
+					return mcp.NewToolResultError(fmt.Sprintf("Error copying work experience: %v", err)), nil
+				}
+
+				// Copy feature maps for this work experience
+				for _, featureMap := range workExp.FeatureMaps {
+					newFeatureMap := &models.FeatureMap{
+						ExperienceID: newWorkExp.ID,
+						Key:          featureMap.Key,
+						Value:        featureMap.Value,
+					}
+					if err := db.AddFeatureMap(newFeatureMap); err != nil {
+						return mcp.NewToolResultError(fmt.Sprintf("Error copying work experience feature map: %v", err)), nil
+					}
+				}
+			}
+
+			// Copy other experiences
+			for _, otherExp := range sourceResume.OtherExperiences {
+				newOtherExp := &models.OtherExperience{
+					ResumeID: uint(resumeID),
+					Category: otherExp.Category,
+				}
+				if err := db.AddOtherExperience(newOtherExp); err != nil {
+					return mcp.NewToolResultError(fmt.Sprintf("Error copying other experience: %v", err)), nil
+				}
+
+				// Copy feature maps for this other experience
+				for _, featureMap := range otherExp.FeatureMaps {
+					newFeatureMap := &models.FeatureMap{
+						ExperienceID: newOtherExp.ID,
+						Key:          featureMap.Key,
+						Value:        featureMap.Value,
+					}
+					if err := db.AddFeatureMap(newFeatureMap); err != nil {
+						return mcp.NewToolResultError(fmt.Sprintf("Error copying other experience feature map: %v", err)), nil
+					}
+				}
+			}
+
+			// Refresh the resume data after copying
+			resume, err = db.GetResumeByID(uint(resumeID))
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("Error refreshing resume after copying: %v", err)), nil
+			}
 		}
 
 		// Validate template by testing it
@@ -112,6 +211,11 @@ Example template:
 		result := map[string]interface{}{
 			"success":     true,
 			"template_id": template.ID,
+		}
+
+		if copyFromResumeIDStr != "" {
+			result["copied_from_resume_id"] = copyFromResumeIDStr
+			result["message"] = fmt.Sprintf("Template created successfully and copied data from resume ID %s", copyFromResumeIDStr)
 		}
 
 		resultJSON, _ := json.Marshal(result)

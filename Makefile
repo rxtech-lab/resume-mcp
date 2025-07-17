@@ -30,6 +30,12 @@ install-local: clean build ## Install the binary to /usr/local/bin (requires sud
 	@echo "$(BINARY_NAME) installed successfully!"
 	@echo "You can now run '$(BINARY_NAME)' from anywhere."
 
+
+package: build
+	./scripts/sign.sh
+	./scripts/package-notarize.sh
+
+
 # Show help
 help:
 	@echo "Available targets:"

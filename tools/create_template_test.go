@@ -262,3 +262,211 @@ func TestCreateTemplateTool_WithOptionalDescription(t *testing.T) {
 		t.Errorf("Expected empty description, got %s", template.Description)
 	}
 }
+
+func TestCreateTemplateTool_CopyFromExistingResume(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+	
+	templateService := service.NewTemplateService()
+	
+	// Create source resume with full data
+	_ = createFullTestResume(t, db)
+	
+	// Create target resume (empty)
+	targetResume := createTestResume(t, db)
+
+	_, handler := NewCreateTemplateTool(db, templateService)
+
+	request := createTestRequest(map[string]interface{}{
+		"resume_id":             "2", // Target resume ID
+		"copy_from_resume_id":   "1", // Source resume ID
+		"name":                  "Copied Template",
+		"description":           "Template with copied data",
+		"template_data":         "<h1>{{.Name}}</h1>{{range .WorkExperiences}}<div>{{.JobTitle}} at {{.Company}}</div>{{end}}",
+	})
+
+	result, err := handler(context.Background(), request)
+	if err != nil {
+		t.Fatalf("Handler returned error: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("Handler returned nil result")
+	}
+
+	textContent, ok := result.Content[0].(mcp.TextContent)
+	if !ok {
+		t.Fatalf("Expected TextContent, got %T", result.Content[0])
+	}
+
+	if !strings.Contains(textContent.Text, "Created template successfully") {
+		t.Errorf("Expected success message, got: %s", textContent.Text)
+	}
+
+	if !strings.Contains(textContent.Text, "copied_from_resume_id") {
+		t.Errorf("Expected copied_from_resume_id in response, got: %s", textContent.Text)
+	}
+
+	// Verify that target resume now has the copied data
+	fullTargetResume, err := db.GetResumeByID(targetResume.ID)
+	if err != nil {
+		t.Fatalf("Failed to get target resume: %v", err)
+	}
+
+	// Check that work experiences were copied
+	if len(fullTargetResume.WorkExperiences) != 1 {
+		t.Errorf("Expected 1 work experience, got %d", len(fullTargetResume.WorkExperiences))
+	}
+
+	// Check that education was copied
+	if len(fullTargetResume.Educations) != 1 {
+		t.Errorf("Expected 1 education, got %d", len(fullTargetResume.Educations))
+	}
+
+	// Check that other experiences were copied
+	if len(fullTargetResume.OtherExperiences) != 1 {
+		t.Errorf("Expected 1 other experience, got %d", len(fullTargetResume.OtherExperiences))
+	}
+
+	// Verify feature maps were copied for work experience
+	if len(fullTargetResume.WorkExperiences) > 0 && len(fullTargetResume.WorkExperiences[0].FeatureMaps) < 1 {
+		t.Errorf("Expected at least 1 work experience feature map, got %d", len(fullTargetResume.WorkExperiences[0].FeatureMaps))
+	}
+
+	// Verify feature maps were copied for education
+	if len(fullTargetResume.Educations) > 0 && len(fullTargetResume.Educations[0].FeatureMaps) < 1 {
+		t.Errorf("Expected at least 1 education feature map, got %d", len(fullTargetResume.Educations[0].FeatureMaps))
+	}
+
+	// Verify feature maps were copied for other experiences
+	if len(fullTargetResume.OtherExperiences) > 0 && len(fullTargetResume.OtherExperiences[0].FeatureMaps) < 1 {
+		t.Errorf("Expected at least 1 other experience feature map, got %d", len(fullTargetResume.OtherExperiences[0].FeatureMaps))
+	}
+
+	// Verify template was created for target resume
+	templates, err := db.ListTemplatesByResumeID(targetResume.ID)
+	if err != nil {
+		t.Fatalf("Failed to list templates: %v", err)
+	}
+
+	if len(templates) != 1 {
+		t.Errorf("Expected 1 template, got %d", len(templates))
+	}
+
+	template := templates[0]
+	if template.Name != "Copied Template" {
+		t.Errorf("Expected template name 'Copied Template', got %s", template.Name)
+	}
+}
+
+func TestCreateTemplateTool_CopyFromNonExistentResume(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+	
+	templateService := service.NewTemplateService()
+	createTestResume(t, db)
+
+	_, handler := NewCreateTemplateTool(db, templateService)
+
+	request := createTestRequest(map[string]interface{}{
+		"resume_id":           "1",
+		"copy_from_resume_id": "999", // Non-existent resume
+		"name":                "Test Template",
+		"template_data":       "<h1>{{.Name}}</h1>",
+	})
+
+	result, err := handler(context.Background(), request)
+	if err != nil {
+		t.Fatalf("Handler returned error: %v", err)
+	}
+
+	textContent, ok := result.Content[0].(mcp.TextContent)
+	if !ok {
+		t.Fatalf("Expected TextContent, got %T", result.Content[0])
+	}
+
+	if !strings.Contains(textContent.Text, "Source resume not found") {
+		t.Errorf("Expected 'Source resume not found' error, got: %s", textContent.Text)
+	}
+}
+
+func TestCreateTemplateTool_CopyFromInvalidID(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+	
+	templateService := service.NewTemplateService()
+	createTestResume(t, db)
+
+	_, handler := NewCreateTemplateTool(db, templateService)
+
+	request := createTestRequest(map[string]interface{}{
+		"resume_id":           "1",
+		"copy_from_resume_id": "invalid", // Invalid ID format
+		"name":                "Test Template",
+		"template_data":       "<h1>{{.Name}}</h1>",
+	})
+
+	result, err := handler(context.Background(), request)
+	if err != nil {
+		t.Fatalf("Handler returned error: %v", err)
+	}
+
+	textContent, ok := result.Content[0].(mcp.TextContent)
+	if !ok {
+		t.Fatalf("Expected TextContent, got %T", result.Content[0])
+	}
+
+	if !strings.Contains(textContent.Text, "Invalid copy_from_resume_id") {
+		t.Errorf("Expected 'Invalid copy_from_resume_id' error, got: %s", textContent.Text)
+	}
+}
+
+func TestCreateTemplateTool_CopyFromEmptyResume(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+	
+	templateService := service.NewTemplateService()
+	
+	// Create source resume (empty)
+	createTestResume(t, db) // ID 1
+	
+	// Create target resume 
+	createTestResume(t, db) // ID 2
+
+	_, handler := NewCreateTemplateTool(db, templateService)
+
+	request := createTestRequest(map[string]interface{}{
+		"resume_id":           "2",
+		"copy_from_resume_id": "1", // Empty source resume
+		"name":                "Template from Empty",
+		"template_data":       "<h1>{{.Name}}</h1>",
+	})
+
+	result, err := handler(context.Background(), request)
+	if err != nil {
+		t.Fatalf("Handler returned error: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("Handler returned nil result")
+	}
+
+	textContent, ok := result.Content[0].(mcp.TextContent)
+	if !ok {
+		t.Fatalf("Expected TextContent, got %T", result.Content[0])
+	}
+
+	if !strings.Contains(textContent.Text, "Created template successfully") {
+		t.Errorf("Expected success message, got: %s", textContent.Text)
+	}
+
+	// Verify template was created
+	templates, err := db.ListTemplatesByResumeID(2)
+	if err != nil {
+		t.Fatalf("Failed to list templates: %v", err)
+	}
+
+	if len(templates) != 1 {
+		t.Errorf("Expected 1 template, got %d", len(templates))
+	}
+}
