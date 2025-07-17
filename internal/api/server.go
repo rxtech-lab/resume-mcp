@@ -4,19 +4,20 @@ import (
 	"io"
 	"log"
 	"os"
-	"text/template"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
+	"github.com/rxtech-lab/resume-mcp/internal/service"
 )
 
 type APIServer struct {
-	app *fiber.App
-	db  *database.Database
+	app             *fiber.App
+	db              *database.Database
+	templateService *service.TemplateService
 }
 
-func NewAPIServer(db *database.Database) *APIServer {
+func NewAPIServer(db *database.Database, templateService *service.TemplateService) *APIServer {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
@@ -33,8 +34,9 @@ func NewAPIServer(db *database.Database) *APIServer {
 	app.Use(cors.New())
 
 	server := &APIServer{
-		app: app,
-		db:  db,
+		app:             app,
+		db:              db,
+		templateService: templateService,
 	}
 
 	server.setupRoutes()
@@ -48,7 +50,7 @@ func (s *APIServer) setupRoutes() {
 
 func (s *APIServer) handlePreview(c *fiber.Ctx) error {
 	sessionID := c.Params("sessionId")
-	
+
 	session, err := s.db.GetPreviewSession(sessionID)
 	if err != nil {
 		log.SetOutput(os.Stderr)
@@ -60,77 +62,22 @@ func (s *APIServer) handlePreview(c *fiber.Ctx) error {
 		})
 	}
 
-	tmpl, err := template.New("resume").Parse(session.Template)
-	if err != nil {
-		log.SetOutput(os.Stderr)
-		log.SetFlags(0)
-		log.Printf("Template parse error: %v", err)
-		log.SetOutput(io.Discard)
-		return c.Status(400).JSON(fiber.Map{
-			"error": "Template parse error",
-		})
-	}
-
-	var html string
-	builder := &stringBuilder{}
-	if err := tmpl.Execute(builder, session.Resume); err != nil {
-		log.SetOutput(os.Stderr)
-		log.SetFlags(0)
-		log.Printf("Template execution error: %v", err)
-		log.SetOutput(io.Discard)
-		return c.Status(500).JSON(fiber.Map{
-			"error": "Template execution error",
-		})
-	}
-	html = builder.String()
-
-	var cssStyle string
-	if session.CSS != "" {
-		cssStyle = "<style>" + session.CSS + "</style>"
-	}
-
-	fullHTML := `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Preview</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    ` + cssStyle + `
-</head>
-<body>
-    ` + html + `
-</body>
-</html>`
-
-	c.Set("Content-Type", "text/html")
+	fullHTML, err := s.templateService.GeneratePreview(session.Template, session.CSS, session.Resume)
 	return c.SendString(fullHTML)
 }
 
 func (s *APIServer) handleHealth(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
-		"status": "ok",
+		"status":  "ok",
 		"service": "resume-mcp",
 	})
 }
 
 func (s *APIServer) Start(port string) error {
+	log.Printf("Starting API server on port %s", port)
 	return s.app.Listen(":" + port)
 }
 
 func (s *APIServer) Shutdown() error {
 	return s.app.Shutdown()
-}
-
-type stringBuilder struct {
-	content string
-}
-
-func (sb *stringBuilder) Write(p []byte) (n int, err error) {
-	sb.content += string(p)
-	return len(p), nil
-}
-
-func (sb *stringBuilder) String() string {
-	return sb.content
 }

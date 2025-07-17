@@ -3,6 +3,7 @@ package mcp
 import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
+	"github.com/rxtech-lab/resume-mcp/internal/service"
 	"github.com/rxtech-lab/resume-mcp/tools"
 )
 
@@ -10,13 +11,13 @@ type MCPServer struct {
 	server *server.MCPServer
 }
 
-func NewMCPServer(db *database.Database, port string) *MCPServer {
+func NewMCPServer(db *database.Database, port string, templateService *service.TemplateService) *MCPServer {
 	mcpServer := &MCPServer{}
-	mcpServer.InitializeTools(db, port)
+	mcpServer.InitializeTools(db, port, templateService)
 	return mcpServer
 }
 
-func (s *MCPServer) InitializeTools(db *database.Database, port string) {
+func (s *MCPServer) InitializeTools(db *database.Database, port string, templateService *service.TemplateService) {
 	srv := server.NewMCPServer(
 		"Resume MCP Server",
 		"1.0.0",
@@ -60,7 +61,7 @@ func (s *MCPServer) InitializeTools(db *database.Database, port string) {
 	deleteResumeTool, deleteResumeHandler := tools.NewDeleteResumeTool(db)
 	srv.AddTool(deleteResumeTool, deleteResumeHandler)
 
-	generatePreviewTool, generatePreviewHandler := tools.NewGeneratePreviewTool(db, port)
+	generatePreviewTool, generatePreviewHandler := tools.NewGeneratePreviewTool(db, port, templateService)
 	srv.AddTool(generatePreviewTool, generatePreviewHandler)
 
 	updatePreviewStyleTool, updatePreviewStyleHandler := tools.NewUpdatePreviewStyleTool(db, port)

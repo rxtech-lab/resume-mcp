@@ -10,6 +10,7 @@ import (
 	"github.com/rxtech-lab/resume-mcp/internal/api"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/internal/mcp"
+	"github.com/rxtech-lab/resume-mcp/internal/service"
 )
 
 func main() {
@@ -21,21 +22,18 @@ func main() {
 		log.Fatal("Failed to get home directory:", err)
 	}
 
-	log.SetOutput(os.Stderr)
 	db, err := database.NewDatabase(homePath + "/resume.db")
 	if err != nil {
-		log.SetOutput(os.Stderr)
-		log.SetFlags(0) // No formatting for errors either
 		log.Fatal("Failed to initialize database:", err)
 	}
 	defer db.Close()
 
-	mcpServer := mcp.NewMCPServer(db, *port)
-	apiServer := api.NewAPIServer(db)
+	templateService := service.NewTemplateService()
+	mcpServer := mcp.NewMCPServer(db, *port, templateService)
+	apiServer := api.NewAPIServer(db, templateService)
 
 	go func() {
 		if err := apiServer.Start(*port); err != nil {
-			log.SetOutput(os.Stderr)
 			log.SetFlags(0)
 			log.Fatal("Failed to start API server:", err)
 		}

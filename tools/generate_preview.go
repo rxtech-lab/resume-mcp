@@ -8,9 +8,10 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
+	"github.com/rxtech-lab/resume-mcp/internal/service"
 )
 
-func NewGeneratePreviewTool(db *database.Database, port string) (mcp.Tool, server.ToolHandlerFunc) {
+func NewGeneratePreviewTool(db *database.Database, port string, templateService *service.TemplateService) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("generate_preview",
 		mcp.WithDescription("Generate HTML preview of a resume using Go templates. Returns a preview URL. Templates now include Tailwind CSS for styling."),
 		mcp.WithString("resume_id",
@@ -44,6 +45,16 @@ func NewGeneratePreviewTool(db *database.Database, port string) (mcp.Tool, serve
 
 		css := request.GetString("css", "")
 
+		resume, err := db.GetResumeByID(uint(resumeID))
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Error getting resume: %v", err)), nil
+		}
+
+		_, err = templateService.GeneratePreview(template, css, *resume)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Error generating preview: %v", err)), nil
+		}
+
 		sessionID, err := db.GeneratePreview(uint(resumeID), template, css)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error generating preview: %v", err)), nil
@@ -52,7 +63,7 @@ func NewGeneratePreviewTool(db *database.Database, port string) (mcp.Tool, serve
 		previewURL := fmt.Sprintf("http://localhost:%s/resume/preview/%s", port, sessionID)
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
-				mcp.NewTextContent("Preview generated successfully"),
+				mcp.NewTextContent("Preview generated successfully, and please return the following URL in the response: "),
 				mcp.NewTextContent(previewURL),
 			},
 		}, nil
