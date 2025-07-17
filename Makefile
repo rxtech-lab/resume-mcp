@@ -9,6 +9,7 @@ all: build
 # Build the project
 build:
 	go build -o bin/resume-mcp ./cmd/main.go
+	go build -o bin/config-updater ./cmd/config-updater/main.go
 
 # Run tests
 test:

@@ -23,6 +23,7 @@ TMP_DIR="tmp_pkg_build"
 # Create a temporary directory structure for pkgbuild
 echo "Creating package structure"
 mkdir -p "${TMP_DIR}/usr/local/bin"
+mkdir -p "${TMP_DIR}_scripts"
 
 # Verify and copy each binary
 for binary in "${BINARIES[@]}"; do
@@ -39,17 +40,24 @@ for binary in "${BINARIES[@]}"; do
   cp "${BINARY_PATH}" "${TMP_DIR}/usr/local/bin/"
 done
 
+# Copy post-install script
+echo "Adding post-install script"
+cp "scripts/post-install.sh" "${TMP_DIR}_scripts/postinstall"
+chmod +x "${TMP_DIR}_scripts/postinstall"
+
 # Create the pkg file
 echo "Building pkg installer"
 pkgbuild --root "${TMP_DIR}" \
+  --scripts "${TMP_DIR}_scripts" \
   --identifier "com.rxtech-lab.resume-mcp" \
   --version "1.0" \
   --sign "${INSTALLER_SIGNING_CERTIFICATE_NAME}" \
   --install-location "/" \
   "${PKG_FILE}"
 
-# Clean up temporary directory
+# Clean up temporary directories
 rm -rf "${TMP_DIR}"
+rm -rf "${TMP_DIR}_scripts"
 
 # Notarize the pkg file
 echo "Submitting for notarization"
