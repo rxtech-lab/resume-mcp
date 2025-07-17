@@ -15,7 +15,7 @@ import (
 
 func NewCreateTemplateTool(db *database.Database, templateService *service.TemplateService) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("create_template",
-		mcp.WithDescription(`Create a new template for a resume. The template uses Go template syntax with access to resume data.
+		mcp.WithDescription(`Create a new template for a resume. The template uses Go template syntax with access to resume data. Don't need to include the background color in the template.
 
 Example template:
 <div class="max-w-4xl mx-auto p-8 bg-white">

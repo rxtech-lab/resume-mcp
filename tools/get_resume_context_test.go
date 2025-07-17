@@ -117,59 +117,37 @@ func TestGetResumeContextTool_Success(t *testing.T) {
 	}
 
 	// Check result content
-	if len(result.Content) == 0 {
-		t.Fatal("Handler returned empty content")
+	if len(result.Content) < 2 {
+		t.Fatal("Handler returned insufficient content")
 	}
 
-	textContent, ok := result.Content[0].(mcp.TextContent)
+	messageContent, ok := result.Content[0].(mcp.TextContent)
 	if !ok {
-		t.Fatalf("Expected TextContent, got %T", result.Content[0])
+		t.Fatalf("Expected TextContent for message, got %T", result.Content[0])
 	}
 
-	if !strings.Contains(textContent.Text, "Resume context retrieved successfully") {
-		t.Errorf("Expected success message, got: %s", textContent.Text)
+	if !strings.Contains(messageContent.Text, "Resume JSON schema retrieved successfully") {
+		t.Errorf("Expected success message, got: %s", messageContent.Text)
 	}
 
-	// Check that resume data is included
-	if !strings.Contains(textContent.Text, "Test User") {
-		t.Errorf("Expected resume name in response, got: %s", textContent.Text)
-	}
-	
-	if !strings.Contains(textContent.Text, "resume_data") {
-		t.Errorf("Expected resume_data in response, got: %s", textContent.Text)
-	}
-	
-	if !strings.Contains(textContent.Text, "schema_guide") {
-		t.Errorf("Expected schema_guide in response, got: %s", textContent.Text)
-	}
-	
-	if !strings.Contains(textContent.Text, "template_examples") {
-		t.Errorf("Expected template_examples in response, got: %s", textContent.Text)
-	}
-	
-	if !strings.Contains(textContent.Text, "data_counts") {
-		t.Errorf("Expected data_counts in response, got: %s", textContent.Text)
+	// Check the JSON data content
+	jsonContent, ok := result.Content[1].(mcp.TextContent)
+	if !ok {
+		t.Fatalf("Expected TextContent for JSON data, got %T", result.Content[1])
 	}
 
-	// Check that all data types are represented
-	if !strings.Contains(textContent.Text, "contacts") {
-		t.Errorf("Expected contacts in response, got: %s", textContent.Text)
+	// Check that JSON schema is included
+	if !strings.Contains(jsonContent.Text, "json_schema") {
+		t.Errorf("Expected json_schema in response, got: %s", jsonContent.Text)
 	}
 	
-	if !strings.Contains(textContent.Text, "work_experiences") {
-		t.Errorf("Expected work_experiences in response, got: %s", textContent.Text)
-	}
-	
-	if !strings.Contains(textContent.Text, "educations") {
-		t.Errorf("Expected educations in response, got: %s", textContent.Text)
-	}
-	
-	if !strings.Contains(textContent.Text, "other_experiences") {
-		t.Errorf("Expected other_experiences in response, got: %s", textContent.Text)
+	// Check that schema contains expected structure
+	if !strings.Contains(jsonContent.Text, "properties") {
+		t.Errorf("Expected JSON schema properties in response, got: %s", jsonContent.Text)
 	}
 }
 
-func TestGetResumeContextTool_WithoutExamples(t *testing.T) {
+func TestGetResumeContextTool_SchemaValidation(t *testing.T) {
 	db := setupTestDB(t)
 	defer db.Close()
 	
@@ -177,10 +155,9 @@ func TestGetResumeContextTool_WithoutExamples(t *testing.T) {
 
 	_, handler := NewGetResumeContextTool(db)
 
-	// Create request without examples
+	// Create request
 	request := createTestRequest(map[string]interface{}{
-		"resume_id":        "1",
-		"include_examples": "false",
+		"resume_id": "1",
 	})
 
 	result, err := handler(context.Background(), request)
@@ -192,23 +169,23 @@ func TestGetResumeContextTool_WithoutExamples(t *testing.T) {
 		t.Fatal("Handler returned nil result")
 	}
 
-	textContent, ok := result.Content[0].(mcp.TextContent)
-	if !ok {
-		t.Fatalf("Expected TextContent, got %T", result.Content[0])
+	if len(result.Content) < 2 {
+		t.Fatal("Handler returned insufficient content")
 	}
 
-	// Should not contain template examples
-	if strings.Contains(textContent.Text, "template_examples") {
-		t.Errorf("Expected no template_examples when include_examples=false, got: %s", textContent.Text)
+	jsonContent, ok := result.Content[1].(mcp.TextContent)
+	if !ok {
+		t.Fatalf("Expected TextContent for JSON data, got %T", result.Content[1])
+	}
+
+	// Should contain JSON schema
+	if !strings.Contains(jsonContent.Text, "json_schema") {
+		t.Errorf("Expected json_schema in response, got: %s", jsonContent.Text)
 	}
 	
-	// Should still contain other sections
-	if !strings.Contains(textContent.Text, "resume_data") {
-		t.Errorf("Expected resume_data in response, got: %s", textContent.Text)
-	}
-	
-	if !strings.Contains(textContent.Text, "schema_guide") {
-		t.Errorf("Expected schema_guide in response, got: %s", textContent.Text)
+	// Should contain JSON schema structure
+	if !strings.Contains(jsonContent.Text, "properties") {
+		t.Errorf("Expected JSON schema properties in response, got: %s", jsonContent.Text)
 	}
 }
 
@@ -234,18 +211,27 @@ func TestGetResumeContextTool_EmptyResume(t *testing.T) {
 		t.Fatal("Handler returned nil result")
 	}
 
-	textContent, ok := result.Content[0].(mcp.TextContent)
+	if len(result.Content) < 2 {
+		t.Fatal("Handler returned insufficient content")
+	}
+
+	messageContent, ok := result.Content[0].(mcp.TextContent)
 	if !ok {
-		t.Fatalf("Expected TextContent, got %T", result.Content[0])
+		t.Fatalf("Expected TextContent for message, got %T", result.Content[0])
 	}
 
-	if !strings.Contains(textContent.Text, "Resume context retrieved successfully") {
-		t.Errorf("Expected success message, got: %s", textContent.Text)
+	if !strings.Contains(messageContent.Text, "Resume JSON schema retrieved successfully") {
+		t.Errorf("Expected success message, got: %s", messageContent.Text)
 	}
 
-	// Should show zero counts for empty data
-	if !strings.Contains(textContent.Text, "data_counts") {
-		t.Errorf("Expected data_counts in response, got: %s", textContent.Text)
+	jsonContent, ok := result.Content[1].(mcp.TextContent)
+	if !ok {
+		t.Fatalf("Expected TextContent for JSON data, got %T", result.Content[1])
+	}
+
+	// Should contain JSON schema even for empty resume
+	if !strings.Contains(jsonContent.Text, "json_schema") {
+		t.Errorf("Expected json_schema in response, got: %s", jsonContent.Text)
 	}
 }
 
@@ -320,7 +306,7 @@ func TestGetResumeContextTool_MissingResumeID(t *testing.T) {
 	}
 }
 
-func TestGetResumeContextTool_SchemaGuide(t *testing.T) {
+func TestGetResumeContextTool_SchemaStructure(t *testing.T) {
 	db := setupTestDB(t)
 	defer db.Close()
 	
@@ -337,29 +323,22 @@ func TestGetResumeContextTool_SchemaGuide(t *testing.T) {
 		t.Fatalf("Handler returned error: %v", err)
 	}
 
-	textContent, ok := result.Content[0].(mcp.TextContent)
+	if len(result.Content) < 2 {
+		t.Fatal("Handler returned insufficient content")
+	}
+
+	jsonContent, ok := result.Content[1].(mcp.TextContent)
 	if !ok {
-		t.Fatalf("Expected TextContent, got %T", result.Content[0])
+		t.Fatalf("Expected TextContent for JSON data, got %T", result.Content[1])
 	}
 
-	// Check that schema guide contains expected field descriptions
-	expectedFields := []string{
-		"basic_fields",
-		"contact_fields", 
-		"work_experience_fields",
-		"education_fields",
-		"other_experience_fields",
-		"feature_map_fields",
-	}
-
-	for _, field := range expectedFields {
-		if !strings.Contains(textContent.Text, field) {
-			t.Errorf("Expected schema guide to contain %s, got: %s", field, textContent.Text)
-		}
+	// Check that schema contains expected JSON schema structure
+	if !strings.Contains(jsonContent.Text, "properties") {
+		t.Errorf("Expected JSON schema properties in response, got: %s", jsonContent.Text)
 	}
 }
 
-func TestGetResumeContextTool_TemplateExamples(t *testing.T) {
+func TestGetResumeContextTool_JSONSchemaContent(t *testing.T) {
 	db := setupTestDB(t)
 	defer db.Close()
 	
@@ -376,28 +355,30 @@ func TestGetResumeContextTool_TemplateExamples(t *testing.T) {
 		t.Fatalf("Handler returned error: %v", err)
 	}
 
-	textContent, ok := result.Content[0].(mcp.TextContent)
+	if len(result.Content) < 2 {
+		t.Fatal("Handler returned insufficient content")
+	}
+
+	jsonContent, ok := result.Content[1].(mcp.TextContent)
 	if !ok {
-		t.Fatalf("Expected TextContent, got %T", result.Content[0])
+		t.Fatalf("Expected TextContent for JSON data, got %T", result.Content[1])
 	}
 
-	// Check that template examples contain expected templates
-	expectedTemplates := []string{
-		"basic_template",
-		"contact_template",
-		"work_experience_template",
-		"education_template",
-		"comprehensive_template",
+	// Check that JSON schema contains expected structure
+	expectedSchemaElements := []string{
+		"type",
+		"properties",
+		"required",
 	}
 
-	for _, template := range expectedTemplates {
-		if !strings.Contains(textContent.Text, template) {
-			t.Errorf("Expected template examples to contain %s, got: %s", template, textContent.Text)
+	for _, element := range expectedSchemaElements {
+		if !strings.Contains(jsonContent.Text, element) {
+			t.Errorf("Expected JSON schema to contain %s, got: %s", element, jsonContent.Text)
 		}
 	}
 
-	// Check that templates contain Go template syntax
-	if !strings.Contains(textContent.Text, "{{.Name}}") {
-		t.Errorf("Expected template examples to contain Go template syntax, got: %s", textContent.Text)
+	// Check that schema contains Resume model fields
+	if !strings.Contains(jsonContent.Text, "\"name\"") {
+		t.Errorf("Expected JSON schema to contain name field, got: %s", jsonContent.Text)
 	}
 }

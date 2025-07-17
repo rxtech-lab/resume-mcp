@@ -3,3 +3,4 @@ __debug*
 resume-mcp
 *.pkg
 *_log.json
+bin
