@@ -15,7 +15,7 @@ import (
 
 func main() {
 	// get port from cmd line
-	port := flag.String("port", "8082", "Port to listen on")
+	port := flag.String("port", "0", "Port to listen on (0 for any available port)")
 	flag.Parse()
 	homePath, err := os.UserHomeDir()
 	if err != nil {
@@ -29,15 +29,19 @@ func main() {
 	defer db.Close()
 
 	templateService := service.NewTemplateService()
-	mcpServer := mcp.NewMCPServer(db, *port, templateService)
+	
+	// Create API server first
 	apiServer := api.NewAPIServer(db, templateService)
-
-	go func() {
-		if err := apiServer.Start(*port); err != nil {
-			log.SetFlags(0)
-			log.Fatal("Failed to start API server:", err)
-		}
-	}()
+	
+	// Start API server and get the actual port
+	actualPort, err := apiServer.Start(*port)
+	if err != nil {
+		log.SetFlags(0)
+		log.Fatal("Failed to start API server:", err)
+	}
+	
+	// Create MCP server with the actual port
+	mcpServer := mcp.NewMCPServer(db, actualPort, templateService)
 
 	go func() {
 		if err := mcpServer.Start(); err != nil {
