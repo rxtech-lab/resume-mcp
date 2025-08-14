@@ -1,8 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"io"
 	"log"
+	"net"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
@@ -76,9 +78,28 @@ func (s *APIServer) handleHealth(c *fiber.Ctx) error {
 	})
 }
 
-func (s *APIServer) Start(port string) error {
-	log.Printf("Starting API server on port %s", port)
-	return s.app.Listen(":" + port)
+func (s *APIServer) Start(port string) (string, error) {
+	// Create a listener on the specified port (0 means any available port)
+	listener, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		return "", err
+	}
+	
+	// Get the actual port assigned
+	actualPort := listener.Addr().(*net.TCPAddr).Port
+	log.Printf("Starting API server on port %d", actualPort)
+	
+	// Start serving in a goroutine
+	go func() {
+		if err := s.app.Listener(listener); err != nil {
+			log.SetOutput(os.Stderr)
+			log.SetFlags(0)
+			log.Printf("API server error: %v", err)
+			log.SetOutput(io.Discard)
+		}
+	}()
+	
+	return fmt.Sprintf("%d", actualPort), nil
 }
 
 func (s *APIServer) Shutdown() error {

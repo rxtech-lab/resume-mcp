@@ -8,11 +8,18 @@ import (
 )
 
 type MCPServer struct {
-	server *server.MCPServer
+	server          *server.MCPServer
+	db              *database.Database
+	templateService *service.TemplateService
+	port            string
 }
 
 func NewMCPServer(db *database.Database, port string, templateService *service.TemplateService) *MCPServer {
-	mcpServer := &MCPServer{}
+	mcpServer := &MCPServer{
+		db:              db,
+		templateService: templateService,
+		port:            port,
+	}
 	mcpServer.InitializeTools(db, port, templateService)
 	return mcpServer
 }
@@ -87,6 +94,12 @@ func (s *MCPServer) InitializeTools(db *database.Database, port string, template
 	srv.AddTool(getResumeContextTool, getResumeContextHandler)
 
 	s.server = srv
+}
+
+func (s *MCPServer) UpdatePort(port string) {
+	s.port = port
+	// Re-initialize tools with the new port
+	s.InitializeTools(s.db, port, s.templateService)
 }
 
 func (s *MCPServer) Start() error {
