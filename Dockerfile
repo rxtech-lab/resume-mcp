@@ -26,13 +26,15 @@ ARG BUILD_TIME
 RUN CGO_ENABLED=1 go build \
     -ldflags "-X main.Version=${VERSION} -X main.CommitHash=${COMMIT_HASH} -X main.BuildTime=${BUILD_TIME}" \
     -o resume-mcp-http \
-    ./cmd/streamable-http/main.go
+    ./cmd/streamable-mcp/main.go
 
 
 CMD ["./resume-mcp-http"]
 
 # Final runtime stage
 FROM ubuntu:24.04
+
+COPY --from=golang-builder /app/resume-mcp-http /app/
 
 # Install ca-certificates for HTTPS requests and wget for health check
 RUN apt-get update && apt-get install -y ca-certificates tzdata wget && \
