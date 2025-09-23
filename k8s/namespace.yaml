@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: resume
+  labels:
+    name: resume
+    app.kubernetes.io/name: resume-mcp
+    app.kubernetes.io/managed-by: kustomize

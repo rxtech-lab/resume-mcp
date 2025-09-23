@@ -32,6 +32,9 @@ install-local: clean build ## Install the binary to /usr/local/bin (requires sud
 	@echo "You can now run '$(BINARY_NAME)' from anywhere."
 
 
+docker:
+	docker build -t resume-mcp .
+
 package: build
 	./scripts/sign.sh
 	./scripts/package-notarize.sh

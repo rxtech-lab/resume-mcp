@@ -7,3 +7,4 @@ bin
 internal/type/user.go
 .DS_Store
 .env
+secrets.yaml
