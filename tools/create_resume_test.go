@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -27,7 +26,7 @@ func TestCreateResumeTool_Success(t *testing.T) {
 	})
 
 	// Execute handler
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -51,7 +50,7 @@ func TestCreateResumeTool_Success(t *testing.T) {
 	}
 
 	// Verify resume was created in database
-	resumes, err := db.ListResumes()
+	resumes, err := db.ListResumes(nil)
 	if err != nil {
 		t.Fatalf("Failed to list resumes: %v", err)
 	}
@@ -84,7 +83,7 @@ func TestCreateResumeTool_CopyFromExisting(t *testing.T) {
 		"copy_from_resume_id": "1",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -107,7 +106,7 @@ func TestCreateResumeTool_CopyFromExisting(t *testing.T) {
 	}
 
 	// Verify new resume was created
-	resumes, err := db.ListResumes()
+	resumes, err := db.ListResumes(nil)
 	if err != nil {
 		t.Fatalf("Failed to list resumes: %v", err)
 	}
@@ -130,7 +129,7 @@ func TestCreateResumeTool_CopyFromExisting(t *testing.T) {
 	}
 
 	// Get full resume data to verify copying
-	fullNewResume, err := db.GetResumeByID(newResumeID)
+	fullNewResume, err := db.GetResumeByID(newResumeID, nil)
 	if err != nil {
 		t.Fatalf("Failed to get full new resume: %v", err)
 	}
@@ -167,7 +166,7 @@ func TestCreateResumeTool_CopyFromExisting(t *testing.T) {
 	}
 
 	// Verify templates were copied
-	templates, err := db.ListTemplatesByResumeID(newResumeID)
+	templates, err := db.ListTemplatesByResumeID(newResumeID, nil)
 	if err != nil {
 		t.Fatalf("Failed to list templates: %v", err)
 	}
@@ -204,7 +203,7 @@ func TestCreateResumeTool_CopyFromNonExistent(t *testing.T) {
 		"copy_from_resume_id": "999", // Non-existent resume
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -231,7 +230,7 @@ func TestCreateResumeTool_CopyFromInvalidID(t *testing.T) {
 		"copy_from_resume_id": "invalid", // Invalid ID format
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -261,7 +260,7 @@ func TestCreateResumeTool_CopyEmptyResume(t *testing.T) {
 		"copy_from_resume_id": "1",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -280,7 +279,7 @@ func TestCreateResumeTool_CopyEmptyResume(t *testing.T) {
 	}
 
 	// Verify 2 resumes exist
-	resumes, err := db.ListResumes()
+	resumes, err := db.ListResumes(nil)
 	if err != nil {
 		t.Fatalf("Failed to list resumes: %v", err)
 	}
@@ -318,7 +317,7 @@ func TestCreateResumeTool_MissingRequiredFields(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := createTestRequest(tt.args)
 
-			_, err := handler(context.Background(), request)
+			_, err := handler(createTestContext(), request)
 			if err == nil {
 				t.Errorf("Expected error for missing required field")
 			}
@@ -338,7 +337,7 @@ func TestCreateResumeTool_WithoutPhoto(t *testing.T) {
 		// No photo provided
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -357,7 +356,7 @@ func TestCreateResumeTool_WithoutPhoto(t *testing.T) {
 	}
 
 	// Verify resume was created with empty photo
-	resumes, err := db.ListResumes()
+	resumes, err := db.ListResumes(nil)
 	if err != nil {
 		t.Fatalf("Failed to list resumes: %v", err)
 	}

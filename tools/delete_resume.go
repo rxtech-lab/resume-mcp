@@ -8,6 +8,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewDeleteResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -20,6 +21,9 @@ func NewDeleteResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		resumeIDStr, err := request.RequireString("resume_id")
 		if err != nil {
 			return nil, fmt.Errorf("resume_id parameter is required: %w", err)
@@ -30,7 +34,7 @@ func NewDeleteResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			return mcp.NewToolResultError(fmt.Sprintf("Invalid resume_id: %v", err)), nil
 		}
 
-		if err := db.DeleteResume(uint(resumeID)); err != nil {
+		if err := db.DeleteResume(uint(resumeID), userID); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error deleting resume: %v", err)), nil
 		}
 

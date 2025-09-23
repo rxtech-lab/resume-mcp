@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -17,7 +16,7 @@ func createTestTemplate(t *testing.T, db *database.Database, resumeID uint) *mod
 		Description:  "A test template",
 		TemplateData: "<h1>{{.Name}}</h1>",
 	}
-	err := db.CreateTemplate(template)
+	err := db.CreateTemplate(template, &testUserID)
 	if err != nil {
 		t.Fatalf("Failed to create test template: %v", err)
 	}
@@ -44,7 +43,7 @@ func TestGetTemplateTool_Success(t *testing.T) {
 	})
 
 	// Execute handler
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -87,7 +86,7 @@ func TestGetTemplateTool_NotFound(t *testing.T) {
 		"template_id": "999", // Non-existent template
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -117,7 +116,7 @@ func TestGetTemplateTool_InvalidTemplateID(t *testing.T) {
 		"template_id": "invalid", // Invalid template ID
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -147,7 +146,7 @@ func TestGetTemplateTool_MissingTemplateID(t *testing.T) {
 		// Missing template_id
 	})
 
-	_, err := handler(context.Background(), request)
+	_, err := handler(createTestContext(), request)
 	if err == nil {
 		t.Errorf("Expected error for missing template_id")
 	}
@@ -170,7 +169,7 @@ func TestGetTemplateTool_WithAllFields(t *testing.T) {
 			{{end}}
 		</div>`,
 	}
-	err := db.CreateTemplate(template)
+	err := db.CreateTemplate(template, &testUserID)
 	if err != nil {
 		t.Fatalf("Failed to create test template: %v", err)
 	}
@@ -181,7 +180,7 @@ func TestGetTemplateTool_WithAllFields(t *testing.T) {
 		"template_id": "1",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}

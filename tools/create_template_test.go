@@ -9,6 +9,7 @@ import (
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/internal/models"
 	"github.com/rxtech-lab/resume-mcp/internal/service"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func setupTestDB(t *testing.T) *database.Database {
@@ -19,13 +20,16 @@ func setupTestDB(t *testing.T) *database.Database {
 	return db
 }
 
+
+var testUserID = "test-user-id"
+
 func createTestResume(t *testing.T, db *database.Database) *models.Resume {
 	resume := &models.Resume{
 		Name:        "Test User",
 		Photo:       "test.jpg",
 		Description: "Test Description",
 	}
-	err := db.CreateResume(resume)
+	err := db.CreateResume(resume, &testUserID)
 	if err != nil {
 		t.Fatalf("Failed to create test resume: %v", err)
 	}
@@ -39,6 +43,14 @@ func createTestRequest(arguments map[string]interface{}) mcp.CallToolRequest {
 			Arguments: arguments,
 		},
 	}
+}
+
+// createTestContext creates a context with a mock authenticated user for testing
+func createTestContext() context.Context {
+	user := &types.AuthenticatedUser{
+		Sub: testUserID,
+	}
+	return types.WithAuthenticatedUser(context.Background(), user)
 }
 
 func TestCreateTemplateTool_Success(t *testing.T) {
@@ -64,7 +76,7 @@ func TestCreateTemplateTool_Success(t *testing.T) {
 	})
 
 	// Execute handler
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -87,7 +99,7 @@ func TestCreateTemplateTool_Success(t *testing.T) {
 	}
 
 	// Verify template was created in database
-	templates, err := db.ListTemplatesByResumeID(resume.ID)
+	templates, err := db.ListTemplatesByResumeID(resume.ID, nil)
 	if err != nil {
 		t.Fatalf("Failed to list templates: %v", err)
 	}
@@ -122,7 +134,7 @@ func TestCreateTemplateTool_InvalidResumeID(t *testing.T) {
 		"template_data": "<h1>{{.Name}}</h1>",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -156,7 +168,7 @@ func TestCreateTemplateTool_InvalidTemplate(t *testing.T) {
 		"template_data": "{{.NonExistentField}}", // This should cause a validation error
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -214,7 +226,7 @@ func TestCreateTemplateTool_MissingRequiredFields(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := createTestRequest(tt.args)
 
-			_, err := handler(context.Background(), request)
+			_, err := handler(createTestContext(), request)
 			if err == nil {
 				t.Errorf("Expected error for missing required field")
 			}
@@ -238,7 +250,7 @@ func TestCreateTemplateTool_WithOptionalDescription(t *testing.T) {
 		// No description provided
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -248,7 +260,7 @@ func TestCreateTemplateTool_WithOptionalDescription(t *testing.T) {
 	}
 
 	// Verify template was created with empty description
-	templates, err := db.ListTemplatesByResumeID(1)
+	templates, err := db.ListTemplatesByResumeID(1, nil)
 	if err != nil {
 		t.Fatalf("Failed to list templates: %v", err)
 	}
@@ -285,7 +297,7 @@ func TestCreateTemplateTool_CopyFromExistingResume(t *testing.T) {
 		"template_data":         "<h1>{{.Name}}</h1>{{range .WorkExperiences}}<div>{{.JobTitle}} at {{.Company}}</div>{{end}}",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -308,7 +320,7 @@ func TestCreateTemplateTool_CopyFromExistingResume(t *testing.T) {
 	}
 
 	// Verify that target resume now has the copied data
-	fullTargetResume, err := db.GetResumeByID(targetResume.ID)
+	fullTargetResume, err := db.GetResumeByID(targetResume.ID, nil)
 	if err != nil {
 		t.Fatalf("Failed to get target resume: %v", err)
 	}
@@ -344,7 +356,7 @@ func TestCreateTemplateTool_CopyFromExistingResume(t *testing.T) {
 	}
 
 	// Verify template was created for target resume
-	templates, err := db.ListTemplatesByResumeID(targetResume.ID)
+	templates, err := db.ListTemplatesByResumeID(targetResume.ID, nil)
 	if err != nil {
 		t.Fatalf("Failed to list templates: %v", err)
 	}
@@ -375,7 +387,7 @@ func TestCreateTemplateTool_CopyFromNonExistentResume(t *testing.T) {
 		"template_data":       "<h1>{{.Name}}</h1>",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -406,7 +418,7 @@ func TestCreateTemplateTool_CopyFromInvalidID(t *testing.T) {
 		"template_data":       "<h1>{{.Name}}</h1>",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -442,7 +454,7 @@ func TestCreateTemplateTool_CopyFromEmptyResume(t *testing.T) {
 		"template_data":       "<h1>{{.Name}}</h1>",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -461,7 +473,7 @@ func TestCreateTemplateTool_CopyFromEmptyResume(t *testing.T) {
 	}
 
 	// Verify template was created
-	templates, err := db.ListTemplatesByResumeID(2)
+	templates, err := db.ListTemplatesByResumeID(2, nil)
 	if err != nil {
 		t.Fatalf("Failed to list templates: %v", err)
 	}

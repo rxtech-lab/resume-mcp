@@ -10,6 +10,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/internal/models"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -39,6 +40,9 @@ func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		resumeIDStr, err := request.RequireString("resume_id")
 		if err != nil {
 			return nil, fmt.Errorf("resume_id parameter is required: %w", err)
@@ -88,7 +92,7 @@ func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			EndDate:    endDate,
 		}
 
-		if err := db.AddEducation(education); err != nil {
+		if err := db.AddEducation(education, userID); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error adding education: %v", err)), nil
 		}
 

@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -33,7 +32,7 @@ func TestUpdateTemplateTool_Success(t *testing.T) {
 	})
 
 	// Execute handler
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -57,7 +56,7 @@ func TestUpdateTemplateTool_Success(t *testing.T) {
 	}
 
 	// Verify template was updated in database
-	updatedTemplate, err := db.GetTemplateByID(template.ID)
+	updatedTemplate, err := db.GetTemplateByID(template.ID, nil)
 	if err != nil {
 		t.Fatalf("Failed to get updated template: %v", err)
 	}
@@ -89,7 +88,7 @@ func TestUpdateTemplateTool_PartialUpdate(t *testing.T) {
 		"name":        "Only Name Updated",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -99,7 +98,7 @@ func TestUpdateTemplateTool_PartialUpdate(t *testing.T) {
 	}
 
 	// Verify only name was updated
-	updatedTemplate, err := db.GetTemplateByID(template.ID)
+	updatedTemplate, err := db.GetTemplateByID(template.ID, nil)
 	if err != nil {
 		t.Fatalf("Failed to get updated template: %v", err)
 	}
@@ -131,7 +130,7 @@ func TestUpdateTemplateTool_InvalidTemplate(t *testing.T) {
 		"template_data": "{{.InvalidField}}", // Invalid template
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -164,7 +163,7 @@ func TestUpdateTemplateTool_NotFound(t *testing.T) {
 		"name":        "Updated Name",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -197,7 +196,7 @@ func TestUpdateTemplateTool_InvalidTemplateID(t *testing.T) {
 		"name":        "Updated Name",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -225,7 +224,7 @@ func TestUpdateTemplateTool_MissingTemplateID(t *testing.T) {
 		"name": "Updated Name",
 	})
 
-	_, err := handler(context.Background(), request)
+	_, err := handler(createTestContext(), request)
 	if err == nil {
 		t.Errorf("Expected error for missing template_id")
 	}
@@ -247,7 +246,7 @@ func TestUpdateTemplateTool_EmptyUpdate(t *testing.T) {
 		// No other fields to update
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -257,7 +256,7 @@ func TestUpdateTemplateTool_EmptyUpdate(t *testing.T) {
 	}
 
 	// Verify template was not changed
-	unchangedTemplate, err := db.GetTemplateByID(template.ID)
+	unchangedTemplate, err := db.GetTemplateByID(template.ID, nil)
 	if err != nil {
 		t.Fatalf("Failed to get template: %v", err)
 	}

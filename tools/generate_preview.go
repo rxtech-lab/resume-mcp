@@ -9,6 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/internal/service"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 	"github.com/rxtech-lab/resume-mcp/internal/utils"
 )
 
@@ -29,6 +30,9 @@ func NewGeneratePreviewTool(db *database.Database, port string, templateService 
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		resumeIDStr, err := request.RequireString("resume_id")
 		if err != nil {
 			return nil, fmt.Errorf("resume_id parameter is required: %w", err)
@@ -51,12 +55,12 @@ func NewGeneratePreviewTool(db *database.Database, port string, templateService 
 
 		css := request.GetString("css", "")
 
-		resume, err := db.GetResumeByID(uint(resumeID))
+		resume, err := db.GetResumeByID(uint(resumeID), userID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error getting resume: %v", err)), nil
 		}
 
-		template, err := db.GetTemplateByID(uint(templateID))
+		template, err := db.GetTemplateByID(uint(templateID), userID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error getting template: %v", err)), nil
 		}
@@ -71,7 +75,7 @@ func NewGeneratePreviewTool(db *database.Database, port string, templateService 
 			return mcp.NewToolResultError(fmt.Sprintf("Error generating preview: %v", err)), nil
 		}
 
-		sessionID, err := db.GeneratePreview(uint(resumeID), template.TemplateData, css)
+		sessionID, err := db.GeneratePreview(uint(resumeID), template.TemplateData, css, userID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error generating preview: %v", err)), nil
 		}

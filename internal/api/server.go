@@ -112,7 +112,7 @@ func (s *APIServer) createAuthenticatedMCPHandler(streamableServer *server.Strea
 func (s *APIServer) handlePreview(c *fiber.Ctx) error {
 	sessionID := c.Params("sessionId")
 
-	session, err := s.db.GetPreviewSession(sessionID)
+	session, err := s.db.GetPreviewSession(sessionID, nil)
 	if err != nil {
 		log.SetOutput(os.Stderr)
 		log.SetFlags(0)

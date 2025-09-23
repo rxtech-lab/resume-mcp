@@ -9,6 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/internal/models"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewAddFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -29,6 +30,9 @@ func NewAddFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandlerFu
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		experienceIDStr, err := request.RequireString("experience_id")
 		if err != nil {
 			return nil, fmt.Errorf("experience_id parameter is required: %w", err)
@@ -55,7 +59,7 @@ func NewAddFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandlerFu
 			Value:        value,
 		}
 
-		if err := db.AddFeatureMap(featureMap); err != nil {
+		if err := db.AddFeatureMap(featureMap, userID); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error adding feature map: %v", err)), nil
 		}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/internal/models"
 	"github.com/rxtech-lab/resume-mcp/internal/service"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewCreateTemplateTool(db *database.Database, templateService *service.TemplateService) (mcp.Tool, server.ToolHandlerFunc) {
@@ -66,6 +67,9 @@ Example template:
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		resumeIDStr, err := request.RequireString("resume_id")
 		if err != nil {
 			return nil, fmt.Errorf("resume_id parameter is required: %w", err)
@@ -91,7 +95,7 @@ Example template:
 		description := request.GetString("description", "")
 
 		// Validate resume exists
-		resume, err := db.GetResumeByID(uint(resumeID))
+		resume, err := db.GetResumeByID(uint(resumeID), userID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Resume not found: %v", err)), nil
 		}
@@ -104,7 +108,7 @@ Example template:
 			}
 
 			// Get the source resume with all related data
-			sourceResume, err := db.GetResumeByID(uint(copyFromResumeID))
+			sourceResume, err := db.GetResumeByID(uint(copyFromResumeID), userID)
 			if err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("Source resume not found: %v", err)), nil
 			}
@@ -118,7 +122,7 @@ Example template:
 					StartDate:  education.StartDate,
 					EndDate:    education.EndDate,
 				}
-				if err := db.AddEducation(newEducation); err != nil {
+				if err := db.AddEducation(newEducation, userID); err != nil {
 					return mcp.NewToolResultError(fmt.Sprintf("Error copying education: %v", err)), nil
 				}
 
@@ -129,7 +133,7 @@ Example template:
 						Key:          featureMap.Key,
 						Value:        featureMap.Value,
 					}
-					if err := db.AddFeatureMap(newFeatureMap); err != nil {
+					if err := db.AddFeatureMap(newFeatureMap, userID); err != nil {
 						return mcp.NewToolResultError(fmt.Sprintf("Error copying education feature map: %v", err)), nil
 					}
 				}
@@ -145,7 +149,7 @@ Example template:
 					StartDate: workExp.StartDate,
 					EndDate:   workExp.EndDate,
 				}
-				if err := db.AddWorkExperience(newWorkExp); err != nil {
+				if err := db.AddWorkExperience(newWorkExp, userID); err != nil {
 					return mcp.NewToolResultError(fmt.Sprintf("Error copying work experience: %v", err)), nil
 				}
 
@@ -156,7 +160,7 @@ Example template:
 						Key:          featureMap.Key,
 						Value:        featureMap.Value,
 					}
-					if err := db.AddFeatureMap(newFeatureMap); err != nil {
+					if err := db.AddFeatureMap(newFeatureMap, userID); err != nil {
 						return mcp.NewToolResultError(fmt.Sprintf("Error copying work experience feature map: %v", err)), nil
 					}
 				}
@@ -168,7 +172,7 @@ Example template:
 					ResumeID: uint(resumeID),
 					Category: otherExp.Category,
 				}
-				if err := db.AddOtherExperience(newOtherExp); err != nil {
+				if err := db.AddOtherExperience(newOtherExp, userID); err != nil {
 					return mcp.NewToolResultError(fmt.Sprintf("Error copying other experience: %v", err)), nil
 				}
 
@@ -179,14 +183,14 @@ Example template:
 						Key:          featureMap.Key,
 						Value:        featureMap.Value,
 					}
-					if err := db.AddFeatureMap(newFeatureMap); err != nil {
+					if err := db.AddFeatureMap(newFeatureMap, userID); err != nil {
 						return mcp.NewToolResultError(fmt.Sprintf("Error copying other experience feature map: %v", err)), nil
 					}
 				}
 			}
 
 			// Refresh the resume data after copying
-			resume, err = db.GetResumeByID(uint(resumeID))
+			resume, err = db.GetResumeByID(uint(resumeID), userID)
 			if err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("Error refreshing resume after copying: %v", err)), nil
 			}
@@ -205,21 +209,15 @@ Example template:
 			TemplateData: templateData,
 		}
 
-		if err := db.CreateTemplate(template); err != nil {
+		if err := db.CreateTemplate(template, userID); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Failed to create template: %v", err)), nil
 		}
 
-		result := map[string]interface{}{
-			"success":     true,
-			"template_id": template.ID,
-		}
-
 		if copyFromResumeIDStr != "" {
-			result["copied_from_resume_id"] = copyFromResumeIDStr
-			result["message"] = fmt.Sprintf("Template created successfully and copied data from resume ID %s", copyFromResumeIDStr)
+			return mcp.NewToolResultText(fmt.Sprintf("Created template successfully and copied data from resume ID %s (copied_from_resume_id: %s)", copyFromResumeIDStr, copyFromResumeIDStr)), nil
 		}
 
-		return mcp.NewToolResultText(fmt.Sprintf("Created template successfully")), nil
+		return mcp.NewToolResultText("Created template successfully"), nil
 	}
 
 	return tool, handler

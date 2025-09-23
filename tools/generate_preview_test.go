@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -32,7 +31,7 @@ func TestGeneratePreviewTool_Success(t *testing.T) {
 	})
 
 	// Execute handler
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -71,7 +70,7 @@ func TestGeneratePreviewTool_Success(t *testing.T) {
 		t.Errorf("Could not extract session ID from URL: %s", secondContent.Text)
 	}
 
-	session, err := db.GetPreviewSession(sessionID)
+	session, err := db.GetPreviewSession(sessionID, nil)
 	if err != nil {
 		t.Fatalf("Failed to get preview session: %v", err)
 	}
@@ -103,7 +102,7 @@ func TestGeneratePreviewTool_WithCSS(t *testing.T) {
 		"css":         "body { background-color: #f0f0f0; }",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -121,7 +120,7 @@ func TestGeneratePreviewTool_WithCSS(t *testing.T) {
 	expectedURL := "http://localhost:8080/resume/preview/"
 	sessionID := strings.TrimPrefix(secondContent.Text, expectedURL)
 
-	session, err := db.GetPreviewSession(sessionID)
+	session, err := db.GetPreviewSession(sessionID, nil)
 	if err != nil {
 		t.Fatalf("Failed to get preview session: %v", err)
 	}
@@ -145,7 +144,7 @@ func TestGeneratePreviewTool_InvalidResumeID(t *testing.T) {
 		"template_id": "1",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -180,7 +179,7 @@ func TestGeneratePreviewTool_InvalidTemplateID(t *testing.T) {
 		"template_id": "999", // Non-existent template
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -208,7 +207,7 @@ func TestGeneratePreviewTool_TemplateMismatch(t *testing.T) {
 	_ = createTestResume(t, db)
 	resume2 := createTestResume(t, db)
 	resume2.Name = "Second Resume"
-	db.UpdateResume(resume2)
+	db.UpdateResume(resume2, nil)
 
 	// Create template for resume2
 	_ = createTestTemplate(t, db, resume2.ID)
@@ -222,7 +221,7 @@ func TestGeneratePreviewTool_TemplateMismatch(t *testing.T) {
 		"template_id": "1", // template belongs to resume2
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -273,7 +272,7 @@ func TestGeneratePreviewTool_MissingRequiredFields(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := createTestRequest(tt.args)
 
-			_, err := handler(context.Background(), request)
+			_, err := handler(createTestContext(), request)
 			if err == nil {
 				t.Errorf("Expected error for missing required field")
 			}
@@ -317,7 +316,7 @@ func TestGeneratePreviewTool_InvalidIDs(t *testing.T) {
 				"template_id": tt.templateID,
 			})
 
-			result, err := handler(context.Background(), request)
+			result, err := handler(createTestContext(), request)
 			if err != nil {
 				t.Fatalf("Handler returned error: %v", err)
 			}

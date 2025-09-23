@@ -9,6 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/internal/models"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -31,6 +32,9 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		name, err := request.RequireString("name")
 		if err != nil {
 			return nil, fmt.Errorf("name parameter is required: %w", err)
@@ -51,7 +55,7 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			Description: description,
 		}
 
-		if err := db.CreateResume(resume); err != nil {
+		if err := db.CreateResume(resume, userID); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error creating resume: %v", err)), nil
 		}
 
@@ -63,7 +67,7 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			}
 
 			// Get the source resume with all related data
-			sourceResume, err := db.GetResumeByID(uint(copyFromResumeID))
+			sourceResume, err := db.GetResumeByID(uint(copyFromResumeID), userID)
 			if err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("Source resume not found: %v", err)), nil
 			}
@@ -75,7 +79,7 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 					Key:      contact.Key,
 					Value:    contact.Value,
 				}
-				if err := db.AddContact(newContact); err != nil {
+				if err := db.AddContact(newContact, userID); err != nil {
 					return mcp.NewToolResultError(fmt.Sprintf("Error copying contact: %v", err)), nil
 				}
 			}
@@ -90,7 +94,7 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 					StartDate: workExp.StartDate,
 					EndDate:   workExp.EndDate,
 				}
-				if err := db.AddWorkExperience(newWorkExp); err != nil {
+				if err := db.AddWorkExperience(newWorkExp, userID); err != nil {
 					return mcp.NewToolResultError(fmt.Sprintf("Error copying work experience: %v", err)), nil
 				}
 
@@ -101,7 +105,7 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 						Key:          featureMap.Key,
 						Value:        featureMap.Value,
 					}
-					if err := db.AddFeatureMap(newFeatureMap); err != nil {
+					if err := db.AddFeatureMap(newFeatureMap, userID); err != nil {
 						return mcp.NewToolResultError(fmt.Sprintf("Error copying work experience feature map: %v", err)), nil
 					}
 				}
@@ -116,7 +120,7 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 					StartDate:  education.StartDate,
 					EndDate:    education.EndDate,
 				}
-				if err := db.AddEducation(newEducation); err != nil {
+				if err := db.AddEducation(newEducation, userID); err != nil {
 					return mcp.NewToolResultError(fmt.Sprintf("Error copying education: %v", err)), nil
 				}
 
@@ -127,7 +131,7 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 						Key:          featureMap.Key,
 						Value:        featureMap.Value,
 					}
-					if err := db.AddFeatureMap(newFeatureMap); err != nil {
+					if err := db.AddFeatureMap(newFeatureMap, userID); err != nil {
 						return mcp.NewToolResultError(fmt.Sprintf("Error copying education feature map: %v", err)), nil
 					}
 				}
@@ -139,7 +143,7 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 					ResumeID: resume.ID,
 					Category: otherExp.Category,
 				}
-				if err := db.AddOtherExperience(newOtherExp); err != nil {
+				if err := db.AddOtherExperience(newOtherExp, userID); err != nil {
 					return mcp.NewToolResultError(fmt.Sprintf("Error copying other experience: %v", err)), nil
 				}
 
@@ -150,14 +154,14 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 						Key:          featureMap.Key,
 						Value:        featureMap.Value,
 					}
-					if err := db.AddFeatureMap(newFeatureMap); err != nil {
+					if err := db.AddFeatureMap(newFeatureMap, userID); err != nil {
 						return mcp.NewToolResultError(fmt.Sprintf("Error copying other experience feature map: %v", err)), nil
 					}
 				}
 			}
 
 			// Copy templates
-			sourceTemplates, err := db.ListTemplatesByResumeID(uint(copyFromResumeID))
+			sourceTemplates, err := db.ListTemplatesByResumeID(uint(copyFromResumeID), userID)
 			if err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("Error getting source templates: %v", err)), nil
 			}
@@ -169,26 +173,17 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 					Description:  template.Description,
 					TemplateData: template.TemplateData,
 				}
-				if err := db.CreateTemplate(newTemplate); err != nil {
+				if err := db.CreateTemplate(newTemplate, userID); err != nil {
 					return mcp.NewToolResultError(fmt.Sprintf("Error copying template: %v", err)), nil
 				}
 			}
 		}
 
-		result := map[string]interface{}{
-			"id":          resume.ID,
-			"name":        resume.Name,
-			"photo":       resume.Photo,
-			"description": resume.Description,
-			"created_at":  resume.CreatedAt,
-		}
-
 		if copyFromResumeIDStr != "" {
-			result["copied_from_resume_id"] = copyFromResumeIDStr
-			result["message"] = fmt.Sprintf("Resume created successfully and copied data from resume ID %s", copyFromResumeIDStr)
+			return mcp.NewToolResultText(fmt.Sprintf("Resume created successfully and copied data from resume ID %s (copied_from_resume_id: %s)", copyFromResumeIDStr, copyFromResumeIDStr)), nil
 		}
 
-		return mcp.NewToolResultText(fmt.Sprintf("Resume created successfully")), nil
+		return mcp.NewToolResultText("Resume created successfully"), nil
 	}
 
 	return tool, handler

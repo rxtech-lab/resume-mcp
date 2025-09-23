@@ -8,6 +8,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewUpdateBasicInfoTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -29,6 +30,9 @@ func NewUpdateBasicInfoTool(db *database.Database) (mcp.Tool, server.ToolHandler
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		resumeIDStr, err := request.RequireString("resume_id")
 		if err != nil {
 			return nil, fmt.Errorf("resume_id parameter is required: %w", err)
@@ -43,7 +47,7 @@ func NewUpdateBasicInfoTool(db *database.Database) (mcp.Tool, server.ToolHandler
 		photo := request.GetString("photo", "")
 		description := request.GetString("description", "")
 
-		resume, err := db.GetResumeByID(uint(resumeID))
+		resume, err := db.GetResumeByID(uint(resumeID), userID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Resume not found: %v", err)), nil
 		}
@@ -58,7 +62,7 @@ func NewUpdateBasicInfoTool(db *database.Database) (mcp.Tool, server.ToolHandler
 			resume.Description = description
 		}
 
-		if err := db.UpdateResume(resume); err != nil {
+		if err := db.UpdateResume(resume, userID); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error updating resume: %v", err)), nil
 		}
 

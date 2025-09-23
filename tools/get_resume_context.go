@@ -11,6 +11,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/internal/models"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewGetResumeContextTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -36,6 +37,9 @@ No actual resume data is returned - only the schema structure.`),
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		resumeIDStr, err := request.RequireString("resume_id")
 		if err != nil {
 			return nil, fmt.Errorf("resume_id parameter is required: %w", err)
@@ -47,7 +51,7 @@ No actual resume data is returned - only the schema structure.`),
 		}
 
 		// Validate that resume exists (but we don't return the actual data)
-		_, err = db.GetResumeByID(uint(resumeID))
+		_, err = db.GetResumeByID(uint(resumeID), userID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Resume not found: %v", err)), nil
 		}

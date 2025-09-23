@@ -8,6 +8,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewListResumesTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -16,7 +17,10 @@ func NewListResumesTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		resumes, err := db.ListResumes()
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
+		resumes, err := db.ListResumes(userID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error listing resumes: %v", err)), nil
 		}
