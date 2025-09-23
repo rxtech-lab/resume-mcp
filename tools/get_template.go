@@ -9,6 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewGetTemplateTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -21,6 +22,9 @@ func NewGetTemplateTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		templateIDStr, err := request.RequireString("template_id")
 		if err != nil {
 			return nil, fmt.Errorf("template_id parameter is required: %w", err)
@@ -31,13 +35,12 @@ func NewGetTemplateTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc
 			return mcp.NewToolResultError(fmt.Sprintf("Invalid template_id: %v", err)), nil
 		}
 
-		template, err := db.GetTemplateByID(uint(templateID))
+		template, err := db.GetTemplateByID(uint(templateID), userID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Template not found: %v", err)), nil
 		}
 
-		result := map[string]interface{}{
-			"success":  true,
+		result := map[string]any{
 			"template": template,
 		}
 

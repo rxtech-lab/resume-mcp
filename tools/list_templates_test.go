@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -19,7 +18,7 @@ func TestListTemplatesTool_Success(t *testing.T) {
 	template2 := createTestTemplate(t, db, resume.ID)
 	template2.Name = "Second Template"
 	template2.Description = "Another test template"
-	db.UpdateTemplate(template2)
+	db.UpdateTemplate(template2, nil)
 
 	tool, handler := NewListTemplatesTool(db)
 
@@ -34,7 +33,7 @@ func TestListTemplatesTool_Success(t *testing.T) {
 	})
 
 	// Execute handler
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -84,7 +83,7 @@ func TestListTemplatesTool_EmptyList(t *testing.T) {
 		"resume_id": "1",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -118,7 +117,7 @@ func TestListTemplatesTool_InvalidResumeID(t *testing.T) {
 		"resume_id": "invalid",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -143,7 +142,7 @@ func TestListTemplatesTool_MissingResumeID(t *testing.T) {
 		// Missing resume_id
 	})
 
-	_, err := handler(context.Background(), request)
+	_, err := handler(createTestContext(), request)
 	if err == nil {
 		t.Errorf("Expected error for missing resume_id")
 	}
@@ -159,7 +158,7 @@ func TestListTemplatesTool_NonExistentResume(t *testing.T) {
 		"resume_id": "999", // Non-existent resume
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}

@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/internal/models"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -30,6 +30,10 @@ func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 				[]string{"fulltime", "parttime", "internship"},
 			),
 		),
+		mcp.WithString("category",
+			mcp.Required(),
+			mcp.Description("The category of the education"),
+		),
 		mcp.WithString("start_date",
 			mcp.Required(),
 			mcp.Description("Start date in YYYY-MM-DD format"),
@@ -40,6 +44,9 @@ func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		resumeIDStr, err := request.RequireString("resume_id")
 		if err != nil {
 			return nil, fmt.Errorf("resume_id parameter is required: %w", err)
@@ -81,15 +88,21 @@ func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			endDate = &parsedEndDate
 		}
 
+		category, err := request.RequireString("category")
+		if err != nil {
+			return nil, fmt.Errorf("category parameter is required: %w", err)
+		}
+
 		education := &models.Education{
 			ResumeID:   uint(resumeID),
 			SchoolName: schoolName,
 			Type:       eduType,
 			StartDate:  startDate,
 			EndDate:    endDate,
+			Category:   category,
 		}
 
-		if err := db.AddEducation(education); err != nil {
+		if err := db.AddEducation(education, userID); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error adding education: %v", err)), nil
 		}
 
@@ -105,8 +118,7 @@ func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			result["end_date"] = education.EndDate.Format("2006-01-02")
 		}
 
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Education added successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText(fmt.Sprintf("Education added successfully")), nil
 	}
 
 	return tool, handler

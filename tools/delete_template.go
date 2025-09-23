@@ -2,13 +2,13 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewDeleteTemplateTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -21,6 +21,9 @@ func NewDeleteTemplateTool(db *database.Database) (mcp.Tool, server.ToolHandlerF
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		templateIDStr, err := request.RequireString("template_id")
 		if err != nil {
 			return nil, fmt.Errorf("template_id parameter is required: %w", err)
@@ -32,22 +35,16 @@ func NewDeleteTemplateTool(db *database.Database) (mcp.Tool, server.ToolHandlerF
 		}
 
 		// Check if template exists first
-		template, err := db.GetTemplateByID(uint(templateID))
+		template, err := db.GetTemplateByID(uint(templateID), userID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Template not found: %v", err)), nil
 		}
 
-		if err := db.DeleteTemplate(uint(templateID)); err != nil {
+		if err := db.DeleteTemplate(uint(templateID), userID); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Failed to delete template: %v", err)), nil
 		}
 
-		result := map[string]interface{}{
-			"success": true,
-			"message": fmt.Sprintf("Template '%s' deleted successfully", template.Name),
-		}
-
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Template deleted successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText(fmt.Sprintf("Template deleted successfully: %s", template.Name)), nil
 	}
 
 	return tool, handler

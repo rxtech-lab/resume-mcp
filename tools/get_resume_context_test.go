@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/internal/models"
 )
+
 
 func createFullTestResume(t *testing.T, db *database.Database) *models.Resume {
 	resume := createTestResume(t, db)
@@ -25,8 +25,8 @@ func createFullTestResume(t *testing.T, db *database.Database) *models.Resume {
 		Key:      "phone",
 		Value:    "+1234567890",
 	}
-	db.AddContact(contact1)
-	db.AddContact(contact2)
+	db.AddContact(contact1, &testUserID)
+	db.AddContact(contact2, &testUserID)
 	
 	// Add work experience
 	workExp := &models.WorkExperience{
@@ -38,7 +38,7 @@ func createFullTestResume(t *testing.T, db *database.Database) *models.Resume {
 	}
 	endDate := time.Date(2023, 12, 31, 0, 0, 0, 0, time.UTC)
 	workExp.EndDate = &endDate
-	db.AddWorkExperience(workExp)
+	db.AddWorkExperience(workExp, &testUserID)
 	
 	// Add work experience feature map
 	workFeature := &models.FeatureMap{
@@ -46,7 +46,7 @@ func createFullTestResume(t *testing.T, db *database.Database) *models.Resume {
 		Key:          "skills",
 		Value:        "Go, Python, React",
 	}
-	db.AddFeatureMap(workFeature)
+	db.AddFeatureMap(workFeature, &testUserID)
 	
 	// Add education
 	education := &models.Education{
@@ -57,7 +57,7 @@ func createFullTestResume(t *testing.T, db *database.Database) *models.Resume {
 	}
 	eduEndDate := time.Date(2020, 6, 30, 0, 0, 0, 0, time.UTC)
 	education.EndDate = &eduEndDate
-	db.AddEducation(education)
+	db.AddEducation(education, &testUserID)
 	
 	// Add education feature map
 	eduFeature := &models.FeatureMap{
@@ -65,14 +65,14 @@ func createFullTestResume(t *testing.T, db *database.Database) *models.Resume {
 		Key:          "degree",
 		Value:        "Bachelor of Science in Computer Science",
 	}
-	db.AddFeatureMap(eduFeature)
+	db.AddFeatureMap(eduFeature, &testUserID)
 	
 	// Add other experience
 	otherExp := &models.OtherExperience{
 		ResumeID: resume.ID,
 		Category: "Projects",
 	}
-	db.AddOtherExperience(otherExp)
+	db.AddOtherExperience(otherExp, &testUserID)
 	
 	// Add other experience feature map
 	otherFeature := &models.FeatureMap{
@@ -80,7 +80,7 @@ func createFullTestResume(t *testing.T, db *database.Database) *models.Resume {
 		Key:          "project_name",
 		Value:        "E-commerce Platform",
 	}
-	db.AddFeatureMap(otherFeature)
+	db.AddFeatureMap(otherFeature, &testUserID)
 	
 	return resume
 }
@@ -107,7 +107,7 @@ func TestGetResumeContextTool_Success(t *testing.T) {
 	})
 
 	// Execute handler
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -160,7 +160,7 @@ func TestGetResumeContextTool_SchemaValidation(t *testing.T) {
 		"resume_id": "1",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -202,7 +202,7 @@ func TestGetResumeContextTool_EmptyResume(t *testing.T) {
 		"resume_id": "1",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -245,7 +245,7 @@ func TestGetResumeContextTool_InvalidResumeID(t *testing.T) {
 		"resume_id": "999", // Non-existent resume
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -275,7 +275,7 @@ func TestGetResumeContextTool_InvalidResumeIDFormat(t *testing.T) {
 		"resume_id": "invalid", // Invalid format
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -300,7 +300,7 @@ func TestGetResumeContextTool_MissingResumeID(t *testing.T) {
 		// Missing resume_id
 	})
 
-	_, err := handler(context.Background(), request)
+	_, err := handler(createTestContext(), request)
 	if err == nil {
 		t.Errorf("Expected error for missing resume_id")
 	}
@@ -318,7 +318,7 @@ func TestGetResumeContextTool_SchemaStructure(t *testing.T) {
 		"resume_id": "1",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -350,7 +350,7 @@ func TestGetResumeContextTool_JSONSchemaContent(t *testing.T) {
 		"resume_id": "1",
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}

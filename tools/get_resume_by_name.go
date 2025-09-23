@@ -8,6 +8,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewGetResumeByNameTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -20,12 +21,15 @@ func NewGetResumeByNameTool(db *database.Database) (mcp.Tool, server.ToolHandler
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		name, err := request.RequireString("name")
 		if err != nil {
 			return nil, fmt.Errorf("name parameter is required: %w", err)
 		}
 
-		resume, err := db.GetResumeByName(name)
+		resume, err := db.GetResumeByName(name, userID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Resume not found: %v", err)), nil
 		}

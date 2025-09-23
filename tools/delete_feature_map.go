@@ -8,6 +8,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewDeleteFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -20,6 +21,9 @@ func NewDeleteFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandle
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		featureMapIDStr, err := request.RequireString("feature_map_id")
 		if err != nil {
 			return nil, fmt.Errorf("feature_map_id parameter is required: %w", err)
@@ -30,11 +34,11 @@ func NewDeleteFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandle
 			return mcp.NewToolResultError(fmt.Sprintf("Invalid feature_map_id: %v", err)), nil
 		}
 
-		if err := db.DeleteFeatureMap(uint(featureMapID)); err != nil {
+		if err := db.DeleteFeatureMap(uint(featureMapID), userID); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error deleting feature map: %v", err)), nil
 		}
 
-		return mcp.NewToolResultText(fmt.Sprintf("Feature map with ID %d deleted successfully", featureMapID)), nil
+		return mcp.NewToolResultText("Feature map deleted successfully"), nil
 	}
 
 	return tool, handler

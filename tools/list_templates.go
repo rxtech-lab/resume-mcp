@@ -9,6 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewListTemplatesTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -21,6 +22,9 @@ func NewListTemplatesTool(db *database.Database) (mcp.Tool, server.ToolHandlerFu
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		resumeIDStr, err := request.RequireString("resume_id")
 		if err != nil {
 			return nil, fmt.Errorf("resume_id parameter is required: %w", err)
@@ -31,7 +35,7 @@ func NewListTemplatesTool(db *database.Database) (mcp.Tool, server.ToolHandlerFu
 			return mcp.NewToolResultError(fmt.Sprintf("Invalid resume_id: %v", err)), nil
 		}
 
-		templates, err := db.ListTemplatesByResumeID(uint(resumeID))
+		templates, err := db.ListTemplatesByResumeID(uint(resumeID), userID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Failed to list templates: %v", err)), nil
 		}

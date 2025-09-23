@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -28,7 +27,7 @@ func TestDeleteTemplateTool_Success(t *testing.T) {
 	})
 
 	// Execute handler
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -56,7 +55,7 @@ func TestDeleteTemplateTool_Success(t *testing.T) {
 	}
 
 	// Verify template was deleted from database
-	_, err = db.GetTemplateByID(template.ID)
+	_, err = db.GetTemplateByID(template.ID, nil)
 	if err == nil {
 		t.Errorf("Expected template to be deleted, but it still exists")
 	}
@@ -72,7 +71,7 @@ func TestDeleteTemplateTool_NotFound(t *testing.T) {
 		"template_id": "999", // Non-existent template
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -102,7 +101,7 @@ func TestDeleteTemplateTool_InvalidTemplateID(t *testing.T) {
 		"template_id": "invalid", // Invalid template ID
 	})
 
-	result, err := handler(context.Background(), request)
+	result, err := handler(createTestContext(), request)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -132,7 +131,7 @@ func TestDeleteTemplateTool_MissingTemplateID(t *testing.T) {
 		// Missing template_id
 	})
 
-	_, err := handler(context.Background(), request)
+	_, err := handler(createTestContext(), request)
 	if err == nil {
 		t.Errorf("Expected error for missing template_id")
 	}
@@ -146,7 +145,7 @@ func TestDeleteTemplateTool_MultipleDeletions(t *testing.T) {
 	template1 := createTestTemplate(t, db, resume.ID)
 	template2 := createTestTemplate(t, db, resume.ID)
 	template2.Name = "Second Template"
-	db.UpdateTemplate(template2)
+	db.UpdateTemplate(template2, nil)
 
 	_, handler := NewDeleteTemplateTool(db)
 
@@ -155,7 +154,7 @@ func TestDeleteTemplateTool_MultipleDeletions(t *testing.T) {
 		"template_id": "1",
 	})
 
-	result1, err := handler(context.Background(), request1)
+	result1, err := handler(createTestContext(), request1)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -165,13 +164,13 @@ func TestDeleteTemplateTool_MultipleDeletions(t *testing.T) {
 	}
 
 	// Verify first template was deleted
-	_, err = db.GetTemplateByID(template1.ID)
+	_, err = db.GetTemplateByID(template1.ID, nil)
 	if err == nil {
 		t.Errorf("Expected first template to be deleted")
 	}
 
 	// Verify second template still exists
-	_, err = db.GetTemplateByID(template2.ID)
+	_, err = db.GetTemplateByID(template2.ID, nil)
 	if err != nil {
 		t.Errorf("Expected second template to still exist: %v", err)
 	}
@@ -181,7 +180,7 @@ func TestDeleteTemplateTool_MultipleDeletions(t *testing.T) {
 		"template_id": "2",
 	})
 
-	result2, err := handler(context.Background(), request2)
+	result2, err := handler(createTestContext(), request2)
 	if err != nil {
 		t.Fatalf("Handler returned error: %v", err)
 	}
@@ -191,13 +190,13 @@ func TestDeleteTemplateTool_MultipleDeletions(t *testing.T) {
 	}
 
 	// Verify second template was also deleted
-	_, err = db.GetTemplateByID(template2.ID)
+	_, err = db.GetTemplateByID(template2.ID, nil)
 	if err == nil {
 		t.Errorf("Expected second template to be deleted")
 	}
 
 	// Verify no templates remain for the resume
-	templates, err := db.ListTemplatesByResumeID(resume.ID)
+	templates, err := db.ListTemplatesByResumeID(resume.ID, nil)
 	if err != nil {
 		t.Fatalf("Failed to list templates: %v", err)
 	}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"os"
 	"os/signal"
@@ -14,15 +13,11 @@ import (
 )
 
 func main() {
-	// get port from cmd line
-	port := flag.String("port", "0", "Port to listen on (0 for any available port)")
-	flag.Parse()
-	homePath, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal("Failed to get home directory:", err)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
 	}
-
-	db, err := database.NewDatabase(homePath + "/resume.db")
+	db, err := database.NewPostgresDatabase(os.Getenv("POSTGRES_URL"))
 	if err != nil {
 		log.Fatal("Failed to initialize database:", err)
 	}
@@ -32,17 +27,19 @@ func main() {
 
 	// Create API server first
 	apiServer := api.NewAPIServer(db, templateService)
+
+	// Create MCP server with the actual port
+	mcpServer := mcp.NewMCPServer(db, port, templateService)
+	streamableServer := mcpServer.StartStreamable()
+	apiServer.SetupStreamableServer(streamableServer)
 	apiServer.SetupRoutes()
 
 	// Start API server and get the actual port
-	actualPort, err := apiServer.Start(*port)
+	_, err = apiServer.Start(port)
 	if err != nil {
 		log.SetFlags(0)
 		log.Fatal("Failed to start API server:", err)
 	}
-
-	// Create MCP server with the actual port
-	mcpServer := mcp.NewMCPServer(db, actualPort, templateService)
 
 	go func() {
 		if err := mcpServer.Start(); err != nil {

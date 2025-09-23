@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/internal/service"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewUpdateTemplateTool(db *database.Database, templateService *service.TemplateService) (mcp.Tool, server.ToolHandlerFunc) {
@@ -31,6 +31,9 @@ func NewUpdateTemplateTool(db *database.Database, templateService *service.Templ
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		templateIDStr, err := request.RequireString("template_id")
 		if err != nil {
 			return nil, fmt.Errorf("template_id parameter is required: %w", err)
@@ -41,7 +44,7 @@ func NewUpdateTemplateTool(db *database.Database, templateService *service.Templ
 			return mcp.NewToolResultError(fmt.Sprintf("Invalid template_id: %v", err)), nil
 		}
 
-		template, err := db.GetTemplateByID(uint(templateID))
+		template, err := db.GetTemplateByID(uint(templateID), userID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Template not found: %v", err)), nil
 		}
@@ -60,7 +63,7 @@ func NewUpdateTemplateTool(db *database.Database, templateService *service.Templ
 		templateData := request.GetString("template_data", "")
 		if templateData != "" {
 			// Validate new template by testing it
-			resume, err := db.GetResumeByID(template.ResumeID)
+			resume, err := db.GetResumeByID(template.ResumeID, userID)
 			if err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("Resume not found: %v", err)), nil
 			}
@@ -73,17 +76,11 @@ func NewUpdateTemplateTool(db *database.Database, templateService *service.Templ
 			template.TemplateData = templateData
 		}
 
-		if err := db.UpdateTemplate(template); err != nil {
+		if err := db.UpdateTemplate(template, userID); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Failed to update template: %v", err)), nil
 		}
 
-		result := map[string]interface{}{
-			"success": true,
-			"message": fmt.Sprintf("Template '%s' updated successfully", template.Name),
-		}
-
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Template updated successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText("Template updated successfully"), nil
 	}
 
 	return tool, handler

@@ -2,13 +2,13 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewUpdateFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -24,9 +24,15 @@ func NewUpdateFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandle
 		mcp.WithString("value",
 			mcp.Description("The feature value"),
 		),
+		mcp.WithString("category",
+			mcp.Description("The category of the feature map"),
+		),
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		featureMapIDStr, err := request.RequireString("feature_map_id")
 		if err != nil {
 			return nil, fmt.Errorf("feature_map_id parameter is required: %w", err)
@@ -39,8 +45,8 @@ func NewUpdateFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandle
 
 		key := request.GetString("key", "")
 		value := request.GetString("value", "")
-
-		featureMap, err := db.GetFeatureMapByID(uint(featureMapID))
+		category := request.GetString("category", "")
+		featureMap, err := db.GetFeatureMapByID(uint(featureMapID), userID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Feature map not found: %v", err)), nil
 		}
@@ -51,20 +57,14 @@ func NewUpdateFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandle
 		if value != "" {
 			featureMap.Value = value
 		}
-
-		if err := db.UpdateFeatureMap(featureMap); err != nil {
+		if category != "" {
+			featureMap.Category = category
+		}
+		if err := db.UpdateFeatureMap(featureMap, userID); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error updating feature map: %v", err)), nil
 		}
 
-		result := map[string]interface{}{
-			"id":            featureMap.ID,
-			"experience_id": featureMap.ExperienceID,
-			"key":           featureMap.Key,
-			"value":         featureMap.Value,
-		}
-
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Feature map updated successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText("Feature map updated successfully"), nil
 	}
 
 	return tool, handler

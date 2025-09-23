@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/internal/models"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewAddFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -27,9 +27,16 @@ func NewAddFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandlerFu
 			mcp.Required(),
 			mcp.Description("The feature value"),
 		),
+		mcp.WithString("category",
+			mcp.Required(),
+			mcp.Description("The category of the feature"),
+		),
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		experienceIDStr, err := request.RequireString("experience_id")
 		if err != nil {
 			return nil, fmt.Errorf("experience_id parameter is required: %w", err)
@@ -50,25 +57,23 @@ func NewAddFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandlerFu
 			return nil, fmt.Errorf("value parameter is required: %w", err)
 		}
 
+		category, err := request.RequireString("category")
+		if err != nil {
+			return nil, fmt.Errorf("category parameter is required: %w", err)
+		}
+
 		featureMap := &models.FeatureMap{
 			ExperienceID: uint(experienceID),
 			Key:          key,
 			Value:        value,
+			Category:     category,
 		}
 
-		if err := db.AddFeatureMap(featureMap); err != nil {
+		if err := db.AddFeatureMap(featureMap, userID); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error adding feature map: %v", err)), nil
 		}
 
-		result := map[string]interface{}{
-			"id":            featureMap.ID,
-			"experience_id": featureMap.ExperienceID,
-			"key":           featureMap.Key,
-			"value":         featureMap.Value,
-		}
-
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Feature map added successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText(fmt.Sprintf("Feature map added successfully")), nil
 	}
 
 	return tool, handler

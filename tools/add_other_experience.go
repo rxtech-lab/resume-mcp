@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/internal/models"
+	"github.com/rxtech-lab/resume-mcp/internal/types"
 )
 
 func NewAddOtherExperienceTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc) {
@@ -26,6 +26,9 @@ func NewAddOtherExperienceTool(db *database.Database) (mcp.Tool, server.ToolHand
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		user := types.GetAuthenticatedUser(ctx)
+		userID := &user.Sub
+
 		resumeIDStr, err := request.RequireString("resume_id")
 		if err != nil {
 			return nil, fmt.Errorf("resume_id parameter is required: %w", err)
@@ -46,18 +49,11 @@ func NewAddOtherExperienceTool(db *database.Database) (mcp.Tool, server.ToolHand
 			Category: category,
 		}
 
-		if err := db.AddOtherExperience(otherExp); err != nil {
+		if err := db.AddOtherExperience(otherExp, userID); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error adding other experience: %v", err)), nil
 		}
 
-		result := map[string]interface{}{
-			"id":        otherExp.ID,
-			"resume_id": otherExp.ResumeID,
-			"category":  otherExp.Category,
-		}
-
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Other experience added successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText(fmt.Sprintf("Other experience added successfully")), nil
 	}
 
 	return tool, handler
