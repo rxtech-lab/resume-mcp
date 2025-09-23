@@ -50,14 +50,13 @@ func NewAPIServer(db *database.Database, templateService *service.TemplateServic
 		templateService: templateService,
 	}
 
-	server.setupRoutes()
 	return server
 }
 
 func (s *APIServer) SetupStreamableServer(server *server.StreamableHTTPServer) {
 	s.streamableServer = server
 
-	mcprouterAuthenticator := auth.NewApikeyAuthenticator(os.Getenv("MCPROUTER_SERVER_API_KEY"), http.DefaultClient)
+	mcprouterAuthenticator := auth.NewApikeyAuthenticator(os.Getenv("MCPROUTER_SERVER_URL"), http.DefaultClient)
 	// setup middleware
 	s.app.Use(auth2.FiberApikeyMiddleware(mcprouterAuthenticator, os.Getenv("MCPROUTER_SERVER_API_KEY"), func(c *fiber.Ctx, user *authTypes.User) error {
 		// Store user in context for later use - adapt types.User to utils.AuthenticatedUser
@@ -71,12 +70,13 @@ func (s *APIServer) SetupStreamableServer(server *server.StreamableHTTPServer) {
 	}))
 }
 
-func (s *APIServer) setupRoutes() {
+func (s *APIServer) SetupRoutes() {
 	// add health check
 	s.app.Get("/health", s.handleHealth)
 	s.app.Get("/resume/preview/:sessionId", s.handlePreview)
-	s.app.Get("/health", s.handleHealth)
-	s.app.All("/mcp", s.createAuthenticatedMCPHandler(s.streamableServer))
+	if s.streamableServer != nil {
+		s.app.All("/mcp", s.createAuthenticatedMCPHandler(s.streamableServer))
+	}
 }
 
 func (s *APIServer) createAuthenticatedMCPHandler(streamableServer *server.StreamableHTTPServer) fiber.Handler {

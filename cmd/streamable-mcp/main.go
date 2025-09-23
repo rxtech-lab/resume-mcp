@@ -28,15 +28,18 @@ func main() {
 	// Create API server first
 	apiServer := api.NewAPIServer(db, templateService)
 
+	// Create MCP server with the actual port
+	mcpServer := mcp.NewMCPServer(db, port, templateService)
+	streamableServer := mcpServer.StartStreamable()
+	apiServer.SetupStreamableServer(streamableServer)
+	apiServer.SetupRoutes()
+
 	// Start API server and get the actual port
-	actualPort, err := apiServer.Start(port)
+	_, err = apiServer.Start(port)
 	if err != nil {
 		log.SetFlags(0)
 		log.Fatal("Failed to start API server:", err)
 	}
-
-	// Create MCP server with the actual port
-	mcpServer := mcp.NewMCPServer(db, actualPort, templateService)
 
 	go func() {
 		if err := mcpServer.Start(); err != nil {
@@ -55,9 +58,4 @@ func main() {
 		log.SetFlags(0)
 		log.Printf("Error shutting down API server: %v", err)
 	}
-}
-
-
-func startStreamable(mcpServer *mcp.MCPServer) {
-
 }

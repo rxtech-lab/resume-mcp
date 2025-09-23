@@ -29,17 +29,18 @@ func main() {
 	defer db.Close()
 
 	templateService := service.NewTemplateService()
-	
+
 	// Create API server first
 	apiServer := api.NewAPIServer(db, templateService)
-	
+	apiServer.SetupRoutes()
+
 	// Start API server and get the actual port
 	actualPort, err := apiServer.Start(*port)
 	if err != nil {
 		log.SetFlags(0)
 		log.Fatal("Failed to start API server:", err)
 	}
-	
+
 	// Create MCP server with the actual port
 	mcpServer := mcp.NewMCPServer(db, actualPort, templateService)
 
