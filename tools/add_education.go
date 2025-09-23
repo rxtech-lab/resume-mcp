@@ -30,6 +30,10 @@ func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 				[]string{"fulltime", "parttime", "internship"},
 			),
 		),
+		mcp.WithString("category",
+			mcp.Required(),
+			mcp.Description("The category of the education"),
+		),
 		mcp.WithString("start_date",
 			mcp.Required(),
 			mcp.Description("Start date in YYYY-MM-DD format"),
@@ -84,12 +88,18 @@ func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			endDate = &parsedEndDate
 		}
 
+		category, err := request.RequireString("category")
+		if err != nil {
+			return nil, fmt.Errorf("category parameter is required: %w", err)
+		}
+
 		education := &models.Education{
 			ResumeID:   uint(resumeID),
 			SchoolName: schoolName,
 			Type:       eduType,
 			StartDate:  startDate,
 			EndDate:    endDate,
+			Category:   category,
 		}
 
 		if err := db.AddEducation(education, userID); err != nil {

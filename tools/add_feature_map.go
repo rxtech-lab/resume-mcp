@@ -27,6 +27,10 @@ func NewAddFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandlerFu
 			mcp.Required(),
 			mcp.Description("The feature value"),
 		),
+		mcp.WithString("category",
+			mcp.Required(),
+			mcp.Description("The category of the feature"),
+		),
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -53,10 +57,16 @@ func NewAddFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandlerFu
 			return nil, fmt.Errorf("value parameter is required: %w", err)
 		}
 
+		category, err := request.RequireString("category")
+		if err != nil {
+			return nil, fmt.Errorf("category parameter is required: %w", err)
+		}
+
 		featureMap := &models.FeatureMap{
 			ExperienceID: uint(experienceID),
 			Key:          key,
 			Value:        value,
+			Category:     category,
 		}
 
 		if err := db.AddFeatureMap(featureMap, userID); err != nil {

@@ -27,6 +27,10 @@ func NewAddContactInfoTool(db *database.Database) (mcp.Tool, server.ToolHandlerF
 			mcp.Required(),
 			mcp.Description("The contact value"),
 		),
+		mcp.WithString("category",
+			mcp.Required(),
+			mcp.Description("The category of the contact"),
+		),
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -53,10 +57,16 @@ func NewAddContactInfoTool(db *database.Database) (mcp.Tool, server.ToolHandlerF
 			return nil, fmt.Errorf("value parameter is required: %w", err)
 		}
 
+		category, err := request.RequireString("category")
+		if err != nil {
+			return nil, fmt.Errorf("category parameter is required: %w", err)
+		}
+
 		contact := &models.Contact{
 			ResumeID: uint(resumeID),
 			Key:      key,
 			Value:    value,
+			Category: category,
 		}
 
 		if err := db.AddContact(contact, userID); err != nil {
