@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -32,7 +31,7 @@ func NewDeleteTemplateTool(db *database.Database) (mcp.Tool, server.ToolHandlerF
 		}
 
 		// Check if template exists first
-		template, err := db.GetTemplateByID(uint(templateID))
+		_, err = db.GetTemplateByID(uint(templateID))
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Template not found: %v", err)), nil
 		}
@@ -41,13 +40,7 @@ func NewDeleteTemplateTool(db *database.Database) (mcp.Tool, server.ToolHandlerF
 			return mcp.NewToolResultError(fmt.Sprintf("Failed to delete template: %v", err)), nil
 		}
 
-		result := map[string]interface{}{
-			"success": true,
-			"message": fmt.Sprintf("Template '%s' deleted successfully", template.Name),
-		}
-
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Template deleted successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText("Template deleted successfully"), nil
 	}
 
 	return tool, handler

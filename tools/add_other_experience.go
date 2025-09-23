@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -50,14 +49,7 @@ func NewAddOtherExperienceTool(db *database.Database) (mcp.Tool, server.ToolHand
 			return mcp.NewToolResultError(fmt.Sprintf("Error adding other experience: %v", err)), nil
 		}
 
-		result := map[string]interface{}{
-			"id":        otherExp.ID,
-			"resume_id": otherExp.ResumeID,
-			"category":  otherExp.Category,
-		}
-
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Other experience added successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText(fmt.Sprintf("Other experience added successfully")), nil
 	}
 
 	return tool, handler

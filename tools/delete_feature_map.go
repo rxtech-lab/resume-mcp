@@ -34,7 +34,7 @@ func NewDeleteFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandle
 			return mcp.NewToolResultError(fmt.Sprintf("Error deleting feature map: %v", err)), nil
 		}
 
-		return mcp.NewToolResultText(fmt.Sprintf("Feature map with ID %d deleted successfully", featureMapID)), nil
+		return mcp.NewToolResultText("Feature map deleted successfully"), nil
 	}
 
 	return tool, handler

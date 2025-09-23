@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -63,16 +62,7 @@ func NewUpdateBasicInfoTool(db *database.Database) (mcp.Tool, server.ToolHandler
 			return mcp.NewToolResultError(fmt.Sprintf("Error updating resume: %v", err)), nil
 		}
 
-		result := map[string]interface{}{
-			"id":          resume.ID,
-			"name":        resume.Name,
-			"photo":       resume.Photo,
-			"description": resume.Description,
-			"updated_at":  resume.UpdatedAt,
-		}
-
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Resume updated successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText("Resume updated successfully"), nil
 	}
 
 	return tool, handler

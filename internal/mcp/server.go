@@ -105,3 +105,8 @@ func (s *MCPServer) UpdatePort(port string) {
 func (s *MCPServer) Start() error {
 	return server.ServeStdio(s.server)
 }
+
+func (s *MCPServer) StartStreamable() *server.StreamableHTTPServer {
+	handler := server.NewStreamableHTTPServer(s.server)
+	return handler
+}

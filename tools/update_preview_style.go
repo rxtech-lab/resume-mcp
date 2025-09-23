@@ -7,6 +7,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
+	"github.com/rxtech-lab/resume-mcp/internal/utils"
 )
 
 func NewUpdatePreviewStyleTool(db *database.Database, port string) (mcp.Tool, server.ToolHandlerFunc) {
@@ -37,7 +38,11 @@ func NewUpdatePreviewStyleTool(db *database.Database, port string) (mcp.Tool, se
 			return mcp.NewToolResultError(fmt.Sprintf("Error updating preview style: %v", err)), nil
 		}
 
-		previewURL := fmt.Sprintf("http://localhost:%s/resume/preview/%s", port, sessionID)
+		previewURL, err := utils.GetTransactionSessionUrl(port, sessionID)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Error updating preview style: %v", err)), nil
+		}
+
 		return mcp.NewToolResultText(fmt.Sprintf("Preview style updated successfully. URL: %s", previewURL)), nil
 	}
 

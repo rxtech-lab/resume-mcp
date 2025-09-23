@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -60,15 +59,7 @@ func NewAddContactInfoTool(db *database.Database) (mcp.Tool, server.ToolHandlerF
 			return mcp.NewToolResultError(fmt.Sprintf("Error adding contact info: %v", err)), nil
 		}
 
-		result := map[string]interface{}{
-			"id":        contact.ID,
-			"resume_id": contact.ResumeID,
-			"key":       contact.Key,
-			"value":     contact.Value,
-		}
-
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Contact info added successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText(fmt.Sprintf("Contact info added successfully")), nil
 	}
 
 	return tool, handler

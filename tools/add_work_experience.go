@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -116,8 +115,7 @@ func NewAddWorkExperienceTool(db *database.Database) (mcp.Tool, server.ToolHandl
 			result["end_date"] = workExp.EndDate.Format("2006-01-02")
 		}
 
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Work experience added successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText(fmt.Sprintf("Work experience added successfully")), nil
 	}
 
 	return tool, handler

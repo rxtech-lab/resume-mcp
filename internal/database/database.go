@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rxtech-lab/resume-mcp/internal/models"
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -34,6 +35,21 @@ func NewDatabase(dbPath string) (*Database, error) {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 
+	return database, nil
+}
+
+// NewPostgresDatabase creates a new database connection to a PostgreSQL database
+func NewPostgresDatabase(postgresURL string) (*Database, error) {
+	db, err := gorm.Open(postgres.Open(postgresURL), &gorm.Config{
+		Logger: nil, // Disable GORM logging to prevent color output
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+	database := &Database{DB: db}
+	if err := database.migrate(); err != nil {
+		return nil, fmt.Errorf("failed to migrate database: %w", err)
+	}
 	return database, nil
 }
 
@@ -144,12 +160,12 @@ func (d *Database) GeneratePreview(resumeID uint, template string, css string) (
 		Template: template,
 		CSS:      css,
 	}
-	
+
 	err := d.DB.Create(session).Error
 	if err != nil {
 		return "", err
 	}
-	
+
 	return sessionID, nil
 }
 

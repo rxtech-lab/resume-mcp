@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -56,15 +55,7 @@ func NewUpdateFeatureMapTool(db *database.Database) (mcp.Tool, server.ToolHandle
 			return mcp.NewToolResultError(fmt.Sprintf("Error updating feature map: %v", err)), nil
 		}
 
-		result := map[string]interface{}{
-			"id":            featureMap.ID,
-			"experience_id": featureMap.ExperienceID,
-			"key":           featureMap.Key,
-			"value":         featureMap.Value,
-		}
-
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Feature map updated successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText("Feature map updated successfully"), nil
 	}
 
 	return tool, handler

@@ -72,7 +72,6 @@ No actual resume data is returned - only the schema structure.`),
 
 		result := map[string]interface{}{
 			"success": true,
-			"message": "Resume JSON schema retrieved successfully",
 			"context": contextData,
 		}
 

@@ -9,6 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rxtech-lab/resume-mcp/internal/database"
 	"github.com/rxtech-lab/resume-mcp/internal/service"
+	"github.com/rxtech-lab/resume-mcp/internal/utils"
 )
 
 func NewGeneratePreviewTool(db *database.Database, port string, templateService *service.TemplateService) (mcp.Tool, server.ToolHandlerFunc) {
@@ -75,7 +76,11 @@ func NewGeneratePreviewTool(db *database.Database, port string, templateService 
 			return mcp.NewToolResultError(fmt.Sprintf("Error generating preview: %v", err)), nil
 		}
 
-		previewURL := fmt.Sprintf("http://localhost:%s/resume/preview/%s", port, sessionID)
+		previewURL, err := utils.GetTransactionSessionUrl(port, sessionID)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Error generating preview: %v", err)), nil
+		}
+
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
 				mcp.NewTextContent("Preview generated successfully, and please return the following URL in the response: "),

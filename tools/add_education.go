@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -105,8 +104,7 @@ func NewAddEducationTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			result["end_date"] = education.EndDate.Format("2006-01-02")
 		}
 
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Education added successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText(fmt.Sprintf("Education added successfully")), nil
 	}
 
 	return tool, handler

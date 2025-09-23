@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -189,8 +188,7 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			result["message"] = fmt.Sprintf("Resume created successfully and copied data from resume ID %s", copyFromResumeIDStr)
 		}
 
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Resume created successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText(fmt.Sprintf("Resume created successfully")), nil
 	}
 
 	return tool, handler

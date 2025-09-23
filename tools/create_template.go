@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -220,8 +219,7 @@ Example template:
 			result["message"] = fmt.Sprintf("Template created successfully and copied data from resume ID %s", copyFromResumeIDStr)
 		}
 
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Created template successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText(fmt.Sprintf("Created template successfully")), nil
 	}
 
 	return tool, handler

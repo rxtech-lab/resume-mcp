@@ -4,3 +4,5 @@ resume-mcp
 *.pkg
 *_log.json
 bin
+internal/type/user.go
+.DS_Store

@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -77,13 +76,7 @@ func NewUpdateTemplateTool(db *database.Database, templateService *service.Templ
 			return mcp.NewToolResultError(fmt.Sprintf("Failed to update template: %v", err)), nil
 		}
 
-		result := map[string]interface{}{
-			"success": true,
-			"message": fmt.Sprintf("Template '%s' updated successfully", template.Name),
-		}
-
-		resultJSON, _ := json.Marshal(result)
-		return mcp.NewToolResultText(fmt.Sprintf("Template updated successfully: %s", string(resultJSON))), nil
+		return mcp.NewToolResultText("Template updated successfully"), nil
 	}
 
 	return tool, handler

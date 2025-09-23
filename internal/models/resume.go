@@ -7,19 +7,21 @@ import (
 )
 
 type Resume struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	Name        string    `gorm:"not null" json:"name"`
-	Photo       string    `json:"photo"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          uint           `gorm:"primaryKey" json:"id"`
+	Name        string         `gorm:"not null" json:"name"`
+	Photo       string         `json:"photo"`
+	Description string         `json:"description"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	Contacts        []Contact        `gorm:"foreignKey:ResumeID" json:"contacts,omitempty"`
-	WorkExperiences []WorkExperience `gorm:"foreignKey:ResumeID" json:"work_experiences,omitempty"`
-	Educations      []Education      `gorm:"foreignKey:ResumeID" json:"educations,omitempty"`
+	Contacts         []Contact         `gorm:"foreignKey:ResumeID" json:"contacts,omitempty"`
+	WorkExperiences  []WorkExperience  `gorm:"foreignKey:ResumeID" json:"work_experiences,omitempty"`
+	Educations       []Education       `gorm:"foreignKey:ResumeID" json:"educations,omitempty"`
 	OtherExperiences []OtherExperience `gorm:"foreignKey:ResumeID" json:"other_experiences,omitempty"`
-	Templates       []Template       `gorm:"foreignKey:ResumeID;constraint:OnDelete:CASCADE" json:"templates,omitempty"`
+	Templates        []Template        `gorm:"foreignKey:ResumeID;constraint:OnDelete:CASCADE" json:"templates,omitempty"`
+
+	UserID string `gorm:"not null" json:"user_id"`
 }
 
 type Contact struct {
@@ -28,19 +30,23 @@ type Contact struct {
 	Key      string `gorm:"not null" json:"key"`
 	Value    string `gorm:"not null" json:"value"`
 	Resume   Resume `gorm:"foreignKey:ResumeID" json:"-"`
+	UserID   string `gorm:"not null" json:"user_id"`
+	Category string `gorm:"not null" json:"category"`
 }
 
 type WorkExperience struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	ResumeID  uint      `gorm:"not null" json:"resume_id"`
-	Company   string    `gorm:"not null" json:"company"`
-	JobTitle  string    `gorm:"not null" json:"job_title"`
-	Type      string    `gorm:"default:fulltime" json:"type"` // fulltime, parttime, internship
-	StartDate time.Time `json:"start_date"`
+	ID        uint       `gorm:"primaryKey" json:"id"`
+	ResumeID  uint       `gorm:"not null" json:"resume_id"`
+	Company   string     `gorm:"not null" json:"company"`
+	JobTitle  string     `gorm:"not null" json:"job_title"`
+	Type      string     `gorm:"default:fulltime" json:"type"` // fulltime, parttime, internship
+	StartDate time.Time  `json:"start_date"`
 	EndDate   *time.Time `json:"end_date"`
-	Resume    Resume    `gorm:"foreignKey:ResumeID" json:"-"`
+	Resume    Resume     `gorm:"foreignKey:ResumeID" json:"-"`
+	Category  string     `gorm:"not null" json:"category"`
 
 	FeatureMaps []FeatureMap `gorm:"foreignKey:ExperienceID;constraint:OnDelete:CASCADE" json:"feature_maps,omitempty"`
+	UserID      string       `gorm:"not null" json:"user_id"`
 }
 
 type Education struct {
@@ -51,8 +57,10 @@ type Education struct {
 	StartDate  time.Time  `json:"start_date"`
 	EndDate    *time.Time `json:"end_date"`
 	Resume     Resume     `gorm:"foreignKey:ResumeID" json:"-"`
+	Category   string     `gorm:"not null" json:"category"`
 
 	FeatureMaps []FeatureMap `gorm:"foreignKey:ExperienceID;constraint:OnDelete:CASCADE" json:"feature_maps,omitempty"`
+	UserID      string       `gorm:"not null" json:"user_id"`
 }
 
 type OtherExperience struct {
@@ -62,6 +70,7 @@ type OtherExperience struct {
 	Resume   Resume `gorm:"foreignKey:ResumeID" json:"-"`
 
 	FeatureMaps []FeatureMap `gorm:"foreignKey:ExperienceID;constraint:OnDelete:CASCADE" json:"feature_maps,omitempty"`
+	UserID      string       `gorm:"not null" json:"user_id"`
 }
 
 type FeatureMap struct {
@@ -69,6 +78,8 @@ type FeatureMap struct {
 	ExperienceID uint   `gorm:"not null" json:"experience_id"`
 	Key          string `gorm:"not null" json:"key"`
 	Value        string `gorm:"type:text" json:"value"`
+	UserID       string `gorm:"not null" json:"user_id"`
+	Category     string `gorm:"not null" json:"category"`
 }
 
 type PreviewSession struct {
@@ -78,6 +89,7 @@ type PreviewSession struct {
 	CSS       string    `gorm:"type:text" json:"css"`
 	CreatedAt time.Time `json:"created_at"`
 	Resume    Resume    `gorm:"foreignKey:ResumeID" json:"resume"`
+	UserID    string    `gorm:"not null" json:"user_id"`
 }
 
 type Template struct {
@@ -89,4 +101,5 @@ type Template struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 	Resume       Resume    `gorm:"foreignKey:ResumeID" json:"-"`
+	UserID       string    `gorm:"not null" json:"user_id"`
 }

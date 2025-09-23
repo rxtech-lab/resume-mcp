@@ -36,8 +36,7 @@ func NewGetTemplateTool(db *database.Database) (mcp.Tool, server.ToolHandlerFunc
 			return mcp.NewToolResultError(fmt.Sprintf("Template not found: %v", err)), nil
 		}
 
-		result := map[string]interface{}{
-			"success":  true,
+		result := map[string]any{
 			"template": template,
 		}
 

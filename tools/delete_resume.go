@@ -34,7 +34,7 @@ func NewDeleteResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			return mcp.NewToolResultError(fmt.Sprintf("Error deleting resume: %v", err)), nil
 		}
 
-		return mcp.NewToolResultText(fmt.Sprintf("Resume with ID %d deleted successfully", resumeID)), nil
+		return mcp.NewToolResultText("Resume deleted successfully"), nil
 	}
 
 	return tool, handler
