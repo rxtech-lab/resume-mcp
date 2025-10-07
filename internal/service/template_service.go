@@ -187,26 +187,38 @@ func (s *TemplateService) GeneratePDF(templateStr, css string, resume models.Res
 
 	var ctx context.Context
 	var cancel context.CancelFunc
+	var allocCancel context.CancelFunc
 
 	if remoteURL != "" {
 		// Use remote Chrome instance
-		allocCtx, allocCancel := chromedp.NewRemoteAllocator(context.Background(), remoteURL)
-		defer allocCancel()
+		var allocCtx context.Context
+		allocCtx, allocCancel = chromedp.NewRemoteAllocator(context.Background(), remoteURL)
+		// Ensure allocator is always cancelled
+		defer func() {
+			if allocCancel != nil {
+				allocCancel()
+			}
+		}()
 		ctx, cancel = chromedp.NewContext(allocCtx)
 	} else {
 		// Use local Chrome instance
 		ctx, cancel = chromedp.NewContext(context.Background())
 	}
-	defer cancel()
+	// Ensure context is always cancelled
+	defer func() {
+		if cancel != nil {
+			cancel()
+		}
+	}()
 
-	// Set timeout
-	ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
+	// Set timeout - use a separate variable to avoid shadowing cancel
+	timeoutCtx, timeoutCancel := context.WithTimeout(ctx, 30*time.Second)
+	defer timeoutCancel()
 
 	var pdfBuffer []byte
 
 	// Navigate to data URL and generate PDF
-	err = chromedp.Run(ctx,
+	err = chromedp.Run(timeoutCtx,
 		chromedp.Navigate("data:text/html,"+html),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			// Use page.PrintToPDF with print background enabled
