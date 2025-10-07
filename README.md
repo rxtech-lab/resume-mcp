@@ -69,10 +69,14 @@ The server provides comprehensive MCP tools for resume management:
 - `update_template` - Update existing templates
 - `delete_template` - Delete templates
 
-#### Preview Generation
-- `generate_preview` - Generate HTML preview using template and resume data
+#### Preview and PDF Generation
+- `generate_preview` - Generate HTML preview using template and resume data (returns preview and download URLs)
 - `update_preview_style` - Update CSS styles for existing previews
 - `get_resume_context` - Get comprehensive resume data and schema guide for template creation
+
+When calling `generate_preview`, you'll receive both:
+- A preview URL to view the resume in browser (includes a download button)
+- A download URL to directly download the PDF version
 
 ### Copy Functionality
 
@@ -193,11 +197,49 @@ go test ./tools -run TestCreateResumeTool
 
 ## API
 
-### Preview URLs
+### HTTP Endpoints
 
-The server runs an HTTP API on port 8080 for preview generation:
+The server runs an HTTP API on port 8080 with the following endpoints:
 
-- `GET /resume/preview/:sid` - View generated HTML preview
+- `GET /resume/preview/:sid` - View generated HTML preview with download button
+- `GET /resume/download/:sid` - Download resume as PDF (pixel-perfect with preview)
+- `GET /health` - Health check endpoint
+
+### PDF Generation
+
+The server supports PDF generation using headless Chrome via chromedp:
+
+- **Local Mode**: Uses locally installed Chrome/Chromium (automatic)
+- **Remote Mode**: Connect to remote Chrome instance via WebSocket
+
+#### Environment Variables
+
+- `CHROMEDP_REMOTE_URL` - Optional WebSocket URL for remote Chrome (e.g., `ws://chromedp:9222`)
+- `BASE_URL` - Base URL for generating preview/download links (e.g., `https://resume.example.com`)
+
+#### PDF Features
+
+- Generated PDF is pixel-perfect with web preview
+- Uses the same HTML and CSS styling
+- Download button excluded from PDF output
+- Stateless - PDF generated in-memory, no local files created
+
+### Kubernetes Deployment
+
+When deploying to Kubernetes, the deployment includes a Chrome sidecar container:
+
+```yaml
+# Chrome runs as a sidecar on port 9222
+- name: chrome
+  image: zenika/alpine-chrome:latest
+  args:
+    - --headless
+    - --no-sandbox
+    - --disable-dev-shm-usage
+    - --remote-debugging-port=9222
+```
+
+Set `CHROMEDP_REMOTE_URL=ws://localhost:9222` to use the sidecar.
 
 ### Database
 

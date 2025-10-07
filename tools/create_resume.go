@@ -183,7 +183,12 @@ func NewCreateResumeTool(db *database.Database) (mcp.Tool, server.ToolHandlerFun
 			return mcp.NewToolResultText(fmt.Sprintf("Resume created successfully and copied data from resume ID %s (copied_from_resume_id: %s)", copyFromResumeIDStr, copyFromResumeIDStr)), nil
 		}
 
-		return mcp.NewToolResultText("Resume created successfully"), nil
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.NewTextContent("Resume created successfully"),
+				mcp.NewTextContent(fmt.Sprintf("Resume ID: %d", resume.ID)),
+			},
+		}, nil
 	}
 
 	return tool, handler
