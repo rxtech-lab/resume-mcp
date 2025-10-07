@@ -40,9 +40,9 @@ func TestGeneratePreviewTool_Success(t *testing.T) {
 		t.Fatal("Handler returned nil result")
 	}
 
-	// Check result content
-	if len(result.Content) < 2 {
-		t.Fatal("Handler returned insufficient content")
+	// Check result content - should have 3 items: message, preview URL, download URL
+	if len(result.Content) < 3 {
+		t.Fatalf("Handler returned insufficient content, expected 3, got %d", len(result.Content))
 	}
 
 	firstContent, ok := result.Content[0].(mcp.TextContent)
@@ -54,18 +54,30 @@ func TestGeneratePreviewTool_Success(t *testing.T) {
 		t.Errorf("Expected success message, got: %s", firstContent.Text)
 	}
 
+	// Second content should be the preview URL
 	secondContent, ok := result.Content[1].(mcp.TextContent)
 	if !ok {
 		t.Fatalf("Expected second TextContent, got %T", result.Content[1])
 	}
 
-	expectedURL := "http://localhost:8080/resume/preview/"
-	if !strings.Contains(secondContent.Text, expectedURL) {
-		t.Errorf("Expected preview URL to contain %s, got: %s", expectedURL, secondContent.Text)
+	expectedPreviewPrefix := "Preview: http://localhost:8080/resume/preview/"
+	if !strings.Contains(secondContent.Text, expectedPreviewPrefix) {
+		t.Errorf("Expected preview URL to contain %s, got: %s", expectedPreviewPrefix, secondContent.Text)
 	}
 
-	// Verify that a preview session was created
-	sessionID := strings.TrimPrefix(secondContent.Text, expectedURL)
+	// Third content should be the download URL
+	thirdContent, ok := result.Content[2].(mcp.TextContent)
+	if !ok {
+		t.Fatalf("Expected third TextContent, got %T", result.Content[2])
+	}
+
+	expectedDownloadPrefix := "Download PDF: http://localhost:8080/resume/download/"
+	if !strings.Contains(thirdContent.Text, expectedDownloadPrefix) {
+		t.Errorf("Expected download URL to contain %s, got: %s", expectedDownloadPrefix, thirdContent.Text)
+	}
+
+	// Verify that a preview session was created - extract session ID from preview URL
+	sessionID := strings.TrimPrefix(strings.TrimSpace(secondContent.Text), expectedPreviewPrefix)
 	if sessionID == "" || sessionID == secondContent.Text {
 		t.Errorf("Could not extract session ID from URL: %s", secondContent.Text)
 	}
@@ -111,14 +123,14 @@ func TestGeneratePreviewTool_WithCSS(t *testing.T) {
 		t.Fatal("Handler returned nil result")
 	}
 
-	// Extract session ID from URL
+	// Extract session ID from preview URL (second content item)
 	secondContent, ok := result.Content[1].(mcp.TextContent)
 	if !ok {
 		t.Fatalf("Expected second TextContent, got %T", result.Content[1])
 	}
 
-	expectedURL := "http://localhost:8080/resume/preview/"
-	sessionID := strings.TrimPrefix(secondContent.Text, expectedURL)
+	expectedURL := "Preview: http://localhost:8080/resume/preview/"
+	sessionID := strings.TrimPrefix(strings.TrimSpace(secondContent.Text), expectedURL)
 
 	session, err := db.GetPreviewSession(sessionID, nil)
 	if err != nil {

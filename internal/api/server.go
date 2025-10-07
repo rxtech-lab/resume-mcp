@@ -74,6 +74,7 @@ func (s *APIServer) SetupRoutes() {
 	// add health check
 	s.app.Get("/health", s.handleHealth)
 	s.app.Get("/resume/preview/:sessionId", s.handlePreview)
+	s.app.Get("/resume/download/:sessionId", s.handleDownload)
 	if s.streamableServer != nil {
 		s.app.All("/mcp", s.createAuthenticatedMCPHandler(s.streamableServer))
 	}
@@ -123,11 +124,54 @@ func (s *APIServer) handlePreview(c *fiber.Ctx) error {
 		})
 	}
 
-	fullHTML, err := s.templateService.GeneratePreview(session.Template, session.CSS, session.Resume)
+	// Generate download URL for the button
+	downloadURL := fmt.Sprintf("/resume/download/%s", sessionID)
+
+	fullHTML, err := s.templateService.GeneratePreviewWithOptions(session.Template, session.CSS, session.Resume, true, downloadURL)
+	if err != nil {
+		log.SetOutput(os.Stderr)
+		log.SetFlags(0)
+		log.Printf("Preview generation failed: %v", err)
+		log.SetOutput(io.Discard)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Failed to generate preview",
+		})
+	}
 
 	// set content type to html
 	c.Set("Content-Type", "text/html")
 	return c.SendString(fullHTML)
+}
+
+func (s *APIServer) handleDownload(c *fiber.Ctx) error {
+	sessionID := c.Params("sessionId")
+
+	session, err := s.db.GetPreviewSession(sessionID, nil)
+	if err != nil {
+		log.SetOutput(os.Stderr)
+		log.SetFlags(0)
+		log.Printf("Preview session not found: %v", err)
+		log.SetOutput(io.Discard)
+		return c.Status(404).JSON(fiber.Map{
+			"error": "Preview session not found",
+		})
+	}
+
+	pdfBuffer, err := s.templateService.GeneratePDF(session.Template, session.CSS, session.Resume)
+	if err != nil {
+		log.SetOutput(os.Stderr)
+		log.SetFlags(0)
+		log.Printf("PDF generation failed: %v", err)
+		log.SetOutput(io.Discard)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Failed to generate PDF",
+		})
+	}
+
+	// Set headers for PDF download
+	c.Set("Content-Type", "application/pdf")
+	c.Set("Content-Disposition", "attachment; filename=\"resume.pdf\"")
+	return c.Send(pdfBuffer)
 }
 
 func (s *APIServer) handleHealth(c *fiber.Ctx) error {

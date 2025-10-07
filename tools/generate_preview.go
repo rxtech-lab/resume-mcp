@@ -85,10 +85,16 @@ func NewGeneratePreviewTool(db *database.Database, port string, templateService 
 			return mcp.NewToolResultError(fmt.Sprintf("Error generating preview: %v", err)), nil
 		}
 
+		downloadURL, err := utils.GetDownloadSessionUrl(port, sessionID)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Error generating download URL: %v", err)), nil
+		}
+
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
-				mcp.NewTextContent("Preview generated successfully, and please return the following URL in the response: "),
-				mcp.NewTextContent(previewURL),
+				mcp.NewTextContent("Preview generated successfully, and please return the following URLs in the response:\n"),
+				mcp.NewTextContent(fmt.Sprintf("Preview: %s\n", previewURL)),
+				mcp.NewTextContent(fmt.Sprintf("Download PDF: %s", downloadURL)),
 			},
 		}, nil
 	}
