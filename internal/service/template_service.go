@@ -65,21 +65,96 @@ func (s *TemplateService) GeneratePreviewWithOptions(templateStr, css string, re
 		cssStyle = "<style>" + css + "</style>"
 	}
 
-	var downloadButton string
+	var appBar string
 	if includeDownloadButton && downloadURL != "" {
-		downloadButton = `
-    <a href="` + downloadURL + `"
-       class="fixed top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-lg transition-colors duration-200 no-print z-50"
-       download="resume.pdf">
-        Download PDF
-    </a>
+		appBar = `
+    <div class="app-bar no-print" style="position: fixed; top: 0; left: 0; right: 0; height: 56px; background: white; border-bottom: 1px solid hsl(214.3 31.8% 91.4%); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 50;">
+        <h1 style="font-size: 18px; font-weight: 600; color: hsl(222.2 47.4% 11.2%); margin: 0;">Resume Preview</h1>
+        <button id="download-btn"
+                class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 w-9"
+                style="background: transparent; border: 1px solid hsl(214.3 31.8% 91.4%); color: hsl(222.2 47.4% 11.2%);"
+                onclick="downloadPDF()"
+                title="Download PDF">
+            <svg id="download-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <svg id="download-spinner" class="hidden animate-spin" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+            </svg>
+        </button>
+    </div>
+    <div class="no-print" style="height: 56px;"></div>
     <style>
         @media print {
             .no-print {
                 display: none !important;
             }
         }
-    </style>`
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        .hidden {
+            display: none;
+        }
+        #download-btn:hover {
+            background: hsl(214.3 31.8% 91.4%) !important;
+        }
+        #download-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+    <script>
+        async function downloadPDF() {
+            const btn = document.getElementById('download-btn');
+            const icon = document.getElementById('download-icon');
+            const spinner = document.getElementById('download-spinner');
+
+            // Disable button and show loading state
+            btn.disabled = true;
+            icon.classList.add('hidden');
+            spinner.classList.remove('hidden');
+
+            try {
+                const response = await fetch('` + downloadURL + `');
+                if (!response.ok) throw new Error('Download failed');
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'resume.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                // Reset state after download
+                setTimeout(() => {
+                    icon.classList.remove('hidden');
+                    spinner.classList.add('hidden');
+                    btn.disabled = false;
+                }, 500);
+            } catch (error) {
+                console.error('Download error:', error);
+                icon.classList.remove('hidden');
+                spinner.classList.add('hidden');
+                btn.disabled = false;
+                alert('Failed to download PDF. Please try again.');
+            }
+        }
+    </script>`
 	}
 
 	fullHTML := `<!DOCTYPE html>
@@ -92,7 +167,7 @@ func (s *TemplateService) GeneratePreviewWithOptions(templateStr, css string, re
     ` + cssStyle + `
 </head>
 <body>
-    ` + downloadButton + `
+    ` + appBar + `
     ` + html + `
 </body>
 </html>`
